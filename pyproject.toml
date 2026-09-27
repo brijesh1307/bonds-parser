@@ -1,0 +1,60 @@
+[project]
+name = "bonds-parser"
+version = "0.0.1"
+description = "Bond deal slip parser API: PDF deal slips to a canonical deal as JSON, XML or Excel"
+requires-python = ">=3.11"
+readme = "README.md"
+
+# Dependencies are pinned in requirements.txt / requirements-dev.txt (docs/11_runbook.md §1.2).
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+extend-exclude = ["data", "samples", "docs"]   # docs hold illustrative code blocks, not source
+
+[tool.ruff.format]
+exclude = ["tools/build_task_plan.py"]   # plan data table: one row per line
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # import order
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "SIM",      # simplify
+    "S",        # bandit (security)
+    "DTZ",      # timezone-aware datetimes (D11)
+    "RUF",
+]
+ignore = [
+    "RUF001", "RUF002", "RUF003",   # allow ₹, en dashes and similar characters in strings / comments
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]               # assert is how pytest works
+"tools/**" = ["S101", "DTZ001", "DTZ011"]   # mock generator uses naive business dates
+"tools/build_task_plan.py" = ["E501"]         # one plan row per line (data table)
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["app"]
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["pdfplumber.*", "openpyxl.*", "reportlab.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = ["error::DeprecationWarning:app.*"]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

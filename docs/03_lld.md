@@ -1586,6 +1586,7 @@ Problem `type` URIs are `urn:bonds-parser:problem:<slug>` **[A]**. Every problem
 
 | Exception (`app/errors.py`) | Raised by | HTTP | `type` slug | Notes |
 |---|---|---|---|---|
+| `BadRequestError` | services / api | 400 | `bad-request` | malformed query value, unknown `format`, invalid payload shape (baseline §7) |
 | `AuthError` | auth | 401 | `unauthorized` | `WWW-Authenticate: Basic realm="bonds-parser"`; generic detail |
 | `AuthBlockedError` | auth limiter | 429 | `auth-blocked` | `Retry-After` header |
 | `NotFoundError` | services | 404 | `not-found` | slip / template / file |

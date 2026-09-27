@@ -1,0 +1,9 @@
+# Text files are stored and checked out with LF (Python, Markdown, JSON, YAML, CSV).
+* text=auto eol=lf
+
+# Binary files: never convert line endings.
+*.pdf  binary
+*.xlsx binary
+*.png  binary
+*.jpg  binary
+*.db   binary

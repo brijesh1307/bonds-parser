@@ -39,11 +39,11 @@ Order: PH0 → PH1 → PH2 → PH3 → PH4 → PH5 (MVP) → PH6 → PH7 ∥ PH8
 
 ### T0.1 · Repository hygiene (1.25 h)
 
-Refs: 13§4, 13§11 · Depends on: - · **Done when:** `main` protected; every task in this plan is an issue on the board
+Refs: 13§4, 13§11 · Depends on: - · **Done when:** `master` protected; every task in this plan is an issue on the board
 
 | ID | Sub-task | Refs | Est. | Done |
 |---|---|---|---|---|
-| 0.1.1 | Commit docs/config; merge or rename `vendace` → `main`; protect `main` (CI + 1 review) | 13§4.1 | 0.5 h | [ ] |
+| 0.1.1 | Commit docs/config; merge `bonds-parser` → `master`; add remote; protect `master` (CI + 1 review) | 13§4.1 | 0.5 h | [ ] |
 | 0.1.2 | Import `docs/task_breakdown.csv` into the tracker; add labels and board columns | 13§9 | 0.5 h | [ ] |
 | 0.1.3 | PR template and CODEOWNERS | 13§4.3 | 0.25 h | [ ] |
 

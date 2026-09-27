@@ -82,8 +82,9 @@ diagnosing a slip that parses wrongly.
 - Branch name and PR title carry the task ID from `12_project_plan.md` (M…, P…).
 - Releases are tags on `main`: `v0.1.0` (MVP), `v0.2.0` (P1), … `v1.0.0` (go-live).
 
-> This repository is currently checked out on the worktree branch `vendace`. Merge it into
-> `main` (or rename it) before starting the workflow above.
+> This repository's default branch is `master` (no remote yet). Work so far is on the worktree
+> branch `bonds-parser`; merge it into `master` and add a GitHub remote to enable branch protection
+> and CI. Read `main` below as `master` until the default branch is renamed.
 
 ### 4.2 Commits
 
@@ -266,7 +267,7 @@ or an additive change. CHANGELOG generated from Conventional Commits.
 
 ## 11. Day-one checklist
 
-1. Merge or rename the `vendace` branch; protect `main`.
+1. Merge `bonds-parser` into `master`; add a GitHub remote; protect `master`.
 2. Create issues for M1.1 – M4.4 (or Iterations 0–5 steps).
 3. Complete Iteration 0 (tooling + CI) before any feature code.
 4. Put 1–3 masked real slips in `samples/real/` so real layouts are known early.

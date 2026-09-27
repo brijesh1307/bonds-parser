@@ -44,6 +44,7 @@ FOOT = ParagraphStyle("f", parent=styles["Normal"], fontSize=7, alignment=1, tex
 
 # --------------------------------------------------------------------------- helpers
 
+
 def q(x: Decimal | float, places: str = "0.01") -> Decimal:
     return Decimal(str(x)).quantize(Decimal(places), rounding=ROUND_HALF_UP)
 
@@ -111,42 +112,64 @@ def fmt_d(d: date) -> str:
 
 def kv_table(rows: list[tuple[str, str]], col_widths=(65 * mm, 105 * mm)) -> Table:
     t = Table(rows, colWidths=col_widths)
-    t.setStyle(TableStyle([
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-        ("BACKGROUND", (0, 0), (0, -1), colors.whitesmoke),
-        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-    ]))
+    t.setStyle(
+        TableStyle(
+            [
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("BACKGROUND", (0, 0), (0, -1), colors.whitesmoke),
+                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ]
+        )
+    )
     return t
 
 
-def grid_table(rows: list[list[str]], col_widths=None, header_bg=colors.HexColor("#1f3b63")) -> Table:
+HEADER_BG = colors.HexColor("#1f3b63")
+
+
+def grid_table(rows: list[list[str]], col_widths=None, header_bg=HEADER_BG) -> Table:
     t = Table(rows, colWidths=col_widths)
-    t.setStyle(TableStyle([
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-        ("BACKGROUND", (0, 0), (-1, 0), header_bg),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 8.5),
-        ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
-    ]))
+    t.setStyle(
+        TableStyle(
+            [
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("BACKGROUND", (0, 0), (-1, 0), header_bg),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+                ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
+            ]
+        )
+    )
     return t
 
 
 def signatures() -> Table:
-    t = Table([["Dealer", "Checker (Mid Office)", "Authorised Signatory (Back Office)"],
-               ["\n\n________________", "\n\n________________", "\n\n________________"]],
-              colWidths=(56 * mm, 56 * mm, 58 * mm))
+    t = Table(
+        [
+            ["Dealer", "Checker (Mid Office)", "Authorised Signatory (Back Office)"],
+            ["\n\n________________", "\n\n________________", "\n\n________________"],
+        ],
+        colWidths=(56 * mm, 56 * mm, 58 * mm),
+    )
     t.setStyle(TableStyle([("FONTSIZE", (0, 0), (-1, -1), 8.5), ("ALIGN", (0, 0), (-1, -1), "CENTER")]))
     return t
 
 
 def build_pdf(path: Path, story: list) -> None:
-    doc = SimpleDocTemplate(str(path), pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm,
-                            topMargin=15 * mm, bottomMargin=15 * mm,
-                            title=path.stem, author="bonds-parser mock generator")
-    doc.build(story + [Spacer(1, 8 * mm), Paragraph(MOCK_FOOTER, FOOT)])
+    doc = SimpleDocTemplate(
+        str(path),
+        pagesize=A4,
+        leftMargin=20 * mm,
+        rightMargin=20 * mm,
+        topMargin=15 * mm,
+        bottomMargin=15 * mm,
+        title=path.stem,
+        author="bonds-parser mock generator",
+    )
+    doc.build([*story, Spacer(1, 8 * mm), Paragraph(MOCK_FOOTER, FOOT)])
 
 
 def write_expected(name: str, data: dict) -> None:
@@ -156,10 +179,12 @@ def write_expected(name: str, data: dict) -> None:
         if isinstance(o, date):
             return o.isoformat()
         raise TypeError(o)
+
     (EXPECTED_DIR / f"{name}.json").write_text(json.dumps(data, indent=2, default=conv), encoding="utf-8")
 
 
 # --------------------------------------------------------------------------- 1. G-Sec outright
+
 
 def gsec_outright() -> None:
     name = "01_gsec_outright_purchase"
@@ -215,27 +240,52 @@ def gsec_outright() -> None:
         Paragraph(OUR_ENTITY, TITLE),
         Paragraph("Treasury Department - Fixed Income Desk", SUB),
         Spacer(1, 4 * mm),
-        Paragraph("<b>DEAL SLIP - GOVERNMENT SECURITIES</b>", ParagraphStyle("h", parent=BODY, alignment=1, fontSize=12)),
+        Paragraph(
+            "<b>DEAL SLIP - GOVERNMENT SECURITIES</b>",
+            ParagraphStyle("h", parent=BODY, alignment=1, fontSize=12),
+        ),
         Spacer(1, 4 * mm),
         kv_table(rows),
         Spacer(1, 6 * mm),
         signatures(),
     ]
     build_pdf(OUT_DIR / f"{name}.pdf", story)
-    write_expected(name, {
-        "deal_id": deal_id, "deal_type": "OUTRIGHT", "instrument_type": "GSEC", "buy_sell": "BUY",
-        "platform": "NDS-OM", "trade_date": trade, "settlement_date": settle,
-        "security_name": "7.10% GS 2034", "isin": isin, "coupon_rate": coupon, "coupon_frequency": 2,
-        "maturity_date": maturity, "last_coupon_date": last_cpn, "day_count": "30/360",
-        "face_value": fv, "quantity": None, "price": price, "yield": ytm,
-        "principal_amount": principal, "accrued_days": acc_days, "accrued_interest": accrued,
-        "consideration": consideration, "currency": "INR",
-        "counterparty": "Anonymous (NDS-OM) - CCIL Novated", "settlement_mode": "DVP-III",
-        "portfolio": "AFS - Treasury", "dealer": "R. Mehta",
-    })
+    write_expected(
+        name,
+        {
+            "deal_id": deal_id,
+            "deal_type": "OUTRIGHT",
+            "instrument_type": "GSEC",
+            "buy_sell": "BUY",
+            "platform": "NDS-OM",
+            "trade_date": trade,
+            "settlement_date": settle,
+            "security_name": "7.10% GS 2034",
+            "isin": isin,
+            "coupon_rate": coupon,
+            "coupon_frequency": 2,
+            "maturity_date": maturity,
+            "last_coupon_date": last_cpn,
+            "day_count": "30/360",
+            "face_value": fv,
+            "quantity": None,
+            "price": price,
+            "yield": ytm,
+            "principal_amount": principal,
+            "accrued_days": acc_days,
+            "accrued_interest": accrued,
+            "consideration": consideration,
+            "currency": "INR",
+            "counterparty": "Anonymous (NDS-OM) - CCIL Novated",
+            "settlement_mode": "DVP-III",
+            "portfolio": "AFS - Treasury",
+            "dealer": "R. Mehta",
+        },
+    )
 
 
 # --------------------------------------------------------------------------- 2. Corporate bond / NCD
+
 
 def ncd_outright() -> None:
     name = "02_corporate_ncd_outright_sale"
@@ -260,64 +310,123 @@ def ncd_outright() -> None:
     ytm = q(solve_ytm(dirty, cfs, 1) * 100, "0.0001")
 
     deal_id = "CB-OTC-260923-0112"
-    header = kv_table([
-        ("Ticket No", deal_id),
-        ("Transaction", "SELL - Outright (OTC, reported on NSE RFQ)"),
-        ("Deal Date / Time", f"{fmt_d(trade)}  15:07"),
-        ("Value Date", fmt_d(settle)),
-        ("Counterparty", "Meridian Asset Management Co. Ltd (MOCK) - Meridian Short Term Fund"),
-        ("Broker", "Direct (No Broker)"),
-    ], col_widths=(45 * mm, 125 * mm))
+    header = kv_table(
+        [
+            ("Ticket No", deal_id),
+            ("Transaction", "SELL - Outright (OTC, reported on NSE RFQ)"),
+            ("Deal Date / Time", f"{fmt_d(trade)}  15:07"),
+            ("Value Date", fmt_d(settle)),
+            ("Counterparty", "Meridian Asset Management Co. Ltd (MOCK) - Meridian Short Term Fund"),
+            ("Broker", "Direct (No Broker)"),
+        ],
+        col_widths=(45 * mm, 125 * mm),
+    )
 
-    sec = grid_table([
-        ["ISIN", "Security Name", "Issuer", "Rating", "Coupon", "Maturity"],
-        [isin, "8.25% SIFL NCD 2029 (Secured)", "Sunrise Infra Finance Ltd", "CRISIL AA+",
-         f"{coupon}% Annual", fmt_d(maturity)],
-    ], col_widths=(25 * mm, 43 * mm, 36 * mm, 20 * mm, 24 * mm, 22 * mm))
+    sec = grid_table(
+        [
+            ["ISIN", "Security Name", "Issuer", "Rating", "Coupon", "Maturity"],
+            [
+                isin,
+                "8.25% SIFL NCD 2029 (Secured)",
+                "Sunrise Infra Finance Ltd",
+                "CRISIL AA+",
+                f"{coupon}% Annual",
+                fmt_d(maturity),
+            ],
+        ],
+        col_widths=(25 * mm, 43 * mm, 36 * mm, 20 * mm, 24 * mm, 22 * mm),
+    )
 
-    amt = grid_table([
-        ["No. of Bonds", "FV per Bond", "Total Face Value", "Clean Price", "YTM %"],
-        [str(qty), inr(fv_per_bond), inr(fv), f"{price}", f"{ytm}"],
-    ], col_widths=(30 * mm, 32 * mm, 40 * mm, 34 * mm, 34 * mm))
-    amt2 = grid_table([
-        ["Principal Amount", "Interest Days", "Accrued Interest", "Net Consideration"],
-        [inr(principal), str(acc_days), inr(accrued), inr(consideration)],
-    ], col_widths=(45 * mm, 30 * mm, 45 * mm, 50 * mm))
+    amt = grid_table(
+        [
+            ["No. of Bonds", "FV per Bond", "Total Face Value", "Clean Price", "YTM %"],
+            [str(qty), inr(fv_per_bond), inr(fv), f"{price}", f"{ytm}"],
+        ],
+        col_widths=(30 * mm, 32 * mm, 40 * mm, 34 * mm, 34 * mm),
+    )
+    amt2 = grid_table(
+        [
+            ["Principal Amount", "Interest Days", "Accrued Interest", "Net Consideration"],
+            [inr(principal), str(acc_days), inr(accrued), inr(consideration)],
+        ],
+        col_widths=(45 * mm, 30 * mm, 45 * mm, 50 * mm),
+    )
 
-    settle_tbl = kv_table([
-        ("Settlement", "Through NSE Clearing Ltd (DVP-I), T+1"),
-        ("Day Count", "Actual/Actual"),
-        ("Depository", "NSDL  -  DP ID IN300999 / Client ID 10458822"),
-        ("Last Interest Paid On", fmt_d(last_cpn)),
-        ("Book", "HFT - Credit"),
-        ("Dealer", "S. Iyer"),
-    ], col_widths=(45 * mm, 125 * mm))
+    settle_tbl = kv_table(
+        [
+            ("Settlement", "Through NSE Clearing Ltd (DVP-I), T+1"),
+            ("Day Count", "Actual/Actual"),
+            ("Depository", "NSDL  -  DP ID IN300999 / Client ID 10458822"),
+            ("Last Interest Paid On", fmt_d(last_cpn)),
+            ("Book", "HFT - Credit"),
+            ("Dealer", "S. Iyer"),
+        ],
+        col_widths=(45 * mm, 125 * mm),
+    )
 
     story = [
         Paragraph(OUR_ENTITY, TITLE),
         Paragraph("Corporate Bond Desk  |  Deal Confirmation Slip", SUB),
-        Spacer(1, 5 * mm), header,
-        Spacer(1, 4 * mm), Paragraph("<b>Security Details</b>", BODY), Spacer(1, 1 * mm), sec,
-        Spacer(1, 4 * mm), Paragraph("<b>Amount Details (INR)</b>", BODY), Spacer(1, 1 * mm), amt, Spacer(1, 2 * mm), amt2,
-        Spacer(1, 4 * mm), Paragraph("<b>Settlement Instructions</b>", BODY), Spacer(1, 1 * mm), settle_tbl,
-        Spacer(1, 6 * mm), signatures(),
+        Spacer(1, 5 * mm),
+        header,
+        Spacer(1, 4 * mm),
+        Paragraph("<b>Security Details</b>", BODY),
+        Spacer(1, 1 * mm),
+        sec,
+        Spacer(1, 4 * mm),
+        Paragraph("<b>Amount Details (INR)</b>", BODY),
+        Spacer(1, 1 * mm),
+        amt,
+        Spacer(1, 2 * mm),
+        amt2,
+        Spacer(1, 4 * mm),
+        Paragraph("<b>Settlement Instructions</b>", BODY),
+        Spacer(1, 1 * mm),
+        settle_tbl,
+        Spacer(1, 6 * mm),
+        signatures(),
     ]
     build_pdf(OUT_DIR / f"{name}.pdf", story)
-    write_expected(name, {
-        "deal_id": deal_id, "deal_type": "OUTRIGHT", "instrument_type": "CORPORATE_BOND", "buy_sell": "SELL",
-        "platform": "OTC / NSE RFQ", "trade_date": trade, "settlement_date": settle,
-        "security_name": "8.25% SIFL NCD 2029 (Secured)", "issuer": "Sunrise Infra Finance Ltd",
-        "credit_rating": "CRISIL AA+", "isin": isin, "coupon_rate": coupon, "coupon_frequency": 1,
-        "maturity_date": maturity, "last_coupon_date": last_cpn, "day_count": "ACT/ACT",
-        "face_value": fv, "face_value_per_unit": fv_per_bond, "quantity": qty, "price": price, "yield": ytm,
-        "principal_amount": principal, "accrued_days": acc_days, "accrued_interest": accrued,
-        "consideration": consideration, "currency": "INR",
-        "counterparty": "Meridian Asset Management Co. Ltd (MOCK) - Meridian Short Term Fund",
-        "broker": None, "settlement_mode": "DVP-I", "portfolio": "HFT - Credit", "dealer": "S. Iyer",
-    })
+    write_expected(
+        name,
+        {
+            "deal_id": deal_id,
+            "deal_type": "OUTRIGHT",
+            "instrument_type": "CORPORATE_BOND",
+            "buy_sell": "SELL",
+            "platform": "OTC / NSE RFQ",
+            "trade_date": trade,
+            "settlement_date": settle,
+            "security_name": "8.25% SIFL NCD 2029 (Secured)",
+            "issuer": "Sunrise Infra Finance Ltd",
+            "credit_rating": "CRISIL AA+",
+            "isin": isin,
+            "coupon_rate": coupon,
+            "coupon_frequency": 1,
+            "maturity_date": maturity,
+            "last_coupon_date": last_cpn,
+            "day_count": "ACT/ACT",
+            "face_value": fv,
+            "face_value_per_unit": fv_per_bond,
+            "quantity": qty,
+            "price": price,
+            "yield": ytm,
+            "principal_amount": principal,
+            "accrued_days": acc_days,
+            "accrued_interest": accrued,
+            "consideration": consideration,
+            "currency": "INR",
+            "counterparty": "Meridian Asset Management Co. Ltd (MOCK) - Meridian Short Term Fund",
+            "broker": None,
+            "settlement_mode": "DVP-I",
+            "portfolio": "HFT - Credit",
+            "dealer": "S. Iyer",
+        },
+    )
 
 
 # --------------------------------------------------------------------------- 3. T-Bill primary auction
+
 
 def tbill_auction() -> None:
     name = "03_tbill_primary_auction_allotment"
@@ -345,44 +454,68 @@ def tbill_auction() -> None:
     for a Face Value of INR {inr(bid_amt)} at a yield of 5.6400%.<br/><br/>
     The bid was accepted on a partial allotment basis. Details of the allotment are given below:
     """
-    tbl = kv_table([
-        ("Security", f"{tenor} DTB {maturity.strftime('%d%m%Y')}"),
-        ("Auction Date", fmt_d(auction)),
-        ("Date of Issue / Settlement", fmt_d(settle)),
-        ("Date of Maturity", fmt_d(maturity)),
-        ("Bid Type", "Competitive"),
-        ("Amount Bid (FV, INR)", inr(bid_amt)),
-        ("Amount Allotted (FV, INR)", inr(allotted)),
-        ("Cut-off Yield (%)", f"{cutoff_yield}"),
-        ("Cut-off Price (per INR 100)", f"{price}"),
-        ("Discount Amount (INR)", inr(discount)),
-        ("Amount Payable (INR)", inr(consideration)),
-        ("Debit A/c", "RBI Current Account - 0457"),
-        ("Credit to", "SGL A/c SGL-0457"),
-        ("Portfolio", "HTM - SLR"),
-    ])
+    tbl = kv_table(
+        [
+            ("Security", f"{tenor} DTB {maturity.strftime('%d%m%Y')}"),
+            ("Auction Date", fmt_d(auction)),
+            ("Date of Issue / Settlement", fmt_d(settle)),
+            ("Date of Maturity", fmt_d(maturity)),
+            ("Bid Type", "Competitive"),
+            ("Amount Bid (FV, INR)", inr(bid_amt)),
+            ("Amount Allotted (FV, INR)", inr(allotted)),
+            ("Cut-off Yield (%)", f"{cutoff_yield}"),
+            ("Cut-off Price (per INR 100)", f"{price}"),
+            ("Discount Amount (INR)", inr(discount)),
+            ("Amount Payable (INR)", inr(consideration)),
+            ("Debit A/c", "RBI Current Account - 0457"),
+            ("Credit to", "SGL A/c SGL-0457"),
+            ("Portfolio", "HTM - SLR"),
+        ]
+    )
     story = [
         Paragraph(OUR_ENTITY, TITLE),
         Paragraph("Treasury Front Office  -  Primary Market Desk", SUB),
-        Spacer(1, 6 * mm), Paragraph(body, BODY), Spacer(1, 3 * mm), tbl,
+        Spacer(1, 6 * mm),
+        Paragraph(body, BODY),
+        Spacer(1, 3 * mm),
+        tbl,
         Spacer(1, 4 * mm),
         Paragraph("Kindly arrange to fund the RBI current account on the settlement date.", BODY),
         Spacer(1, 6 * mm),
         Paragraph("Yours faithfully,<br/><br/>(A. Kulkarni)<br/>Dealer - Primary Market", BODY),
     ]
     build_pdf(OUT_DIR / f"{name}.pdf", story)
-    write_expected(name, {
-        "deal_id": deal_id, "deal_type": "PRIMARY_AUCTION", "instrument_type": "TBILL", "buy_sell": "BUY",
-        "platform": "RBI E-Kuber", "trade_date": auction, "settlement_date": settle,
-        "security_name": f"{tenor} DTB {maturity.strftime('%d%m%Y')}", "isin": isin,
-        "tenor_days": tenor, "maturity_date": maturity, "bid_type": "COMPETITIVE",
-        "bid_amount": bid_amt, "face_value": allotted, "price": price, "yield": cutoff_yield,
-        "discount_amount": discount, "consideration": consideration, "currency": "INR",
-        "counterparty": "Reserve Bank of India", "portfolio": "HTM - SLR", "dealer": "A. Kulkarni",
-    })
+    write_expected(
+        name,
+        {
+            "deal_id": deal_id,
+            "deal_type": "PRIMARY_AUCTION",
+            "instrument_type": "TBILL",
+            "buy_sell": "BUY",
+            "platform": "RBI E-Kuber",
+            "trade_date": auction,
+            "settlement_date": settle,
+            "security_name": f"{tenor} DTB {maturity.strftime('%d%m%Y')}",
+            "isin": isin,
+            "tenor_days": tenor,
+            "maturity_date": maturity,
+            "bid_type": "COMPETITIVE",
+            "bid_amount": bid_amt,
+            "face_value": allotted,
+            "price": price,
+            "yield": cutoff_yield,
+            "discount_amount": discount,
+            "consideration": consideration,
+            "currency": "INR",
+            "counterparty": "Reserve Bank of India",
+            "portfolio": "HTM - SLR",
+            "dealer": "A. Kulkarni",
+        },
+    )
 
 
 # --------------------------------------------------------------------------- 4. Market repo (two legs)
+
 
 def market_repo() -> None:
     name = "04_market_repo_reverse_repo"
@@ -407,50 +540,105 @@ def market_repo() -> None:
     leg2_price = q((leg2_amount - acc2) / fv * 100, "0.0001")
 
     deal_id = "REPO/MKT/2026/000918"
-    header = kv_table([
-        ("Deal ID", deal_id),
-        ("Deal Type", "REVERSE REPO (Lending Funds) - Market Repo"),
-        ("Trade Date", fmt_d(trade)),
-        ("Counterparty", "Alpha Co-operative Bank Ltd (MOCK)"),
-        ("Platform", "CROMS (CCIL)"),
-        ("Collateral Security", "6.99% GS 2031"),
-        ("ISIN", isin),
-        ("Face Value of Collateral (INR)", inr(fv)),
-        ("Repo Rate (% p.a.)", f"{repo_rate}"),
-        ("Repo Period (Days)", str(repo_days)),
-        ("Day Count (Repo Interest)", "Actual/365"),
-    ])
-    legs = grid_table([
-        ["Leg", "Date", "Direction", "Price", "Accr Days", "Accrued Int.", "Settlement Amount"],
-        ["First Leg", fmt_d(leg1), "Pay Funds", f"{leg1_price}", str(acc1_days), inr(acc1), inr(leg1_amount)],
-        ["Second Leg", fmt_d(leg2), "Receive Funds", f"{leg2_price}", str(acc2_days), inr(acc2), inr(leg2_amount)],
-    ], col_widths=(20 * mm, 24 * mm, 25 * mm, 18 * mm, 17 * mm, 28 * mm, 38 * mm))
+    header = kv_table(
+        [
+            ("Deal ID", deal_id),
+            ("Deal Type", "REVERSE REPO (Lending Funds) - Market Repo"),
+            ("Trade Date", fmt_d(trade)),
+            ("Counterparty", "Alpha Co-operative Bank Ltd (MOCK)"),
+            ("Platform", "CROMS (CCIL)"),
+            ("Collateral Security", "6.99% GS 2031"),
+            ("ISIN", isin),
+            ("Face Value of Collateral (INR)", inr(fv)),
+            ("Repo Rate (% p.a.)", f"{repo_rate}"),
+            ("Repo Period (Days)", str(repo_days)),
+            ("Day Count (Repo Interest)", "Actual/365"),
+        ]
+    )
+    legs = grid_table(
+        [
+            ["Leg", "Date", "Direction", "Price", "Accr Days", "Accrued Int.", "Settlement Amount"],
+            [
+                "First Leg",
+                fmt_d(leg1),
+                "Pay Funds",
+                f"{leg1_price}",
+                str(acc1_days),
+                inr(acc1),
+                inr(leg1_amount),
+            ],
+            [
+                "Second Leg",
+                fmt_d(leg2),
+                "Receive Funds",
+                f"{leg2_price}",
+                str(acc2_days),
+                inr(acc2),
+                inr(leg2_amount),
+            ],
+        ],
+        col_widths=(20 * mm, 24 * mm, 25 * mm, 18 * mm, 17 * mm, 28 * mm, 38 * mm),
+    )
     story = [
         Paragraph(OUR_ENTITY, TITLE),
         Paragraph("Money Market Desk  -  Repo Deal Ticket", SUB),
-        Spacer(1, 5 * mm), header,
-        Spacer(1, 5 * mm), Paragraph("<b>Leg Details</b>", BODY), Spacer(1, 1 * mm), legs,
+        Spacer(1, 5 * mm),
+        header,
+        Spacer(1, 5 * mm),
+        Paragraph("<b>Leg Details</b>", BODY),
+        Spacer(1, 1 * mm),
+        legs,
         Spacer(1, 3 * mm),
         Paragraph(f"Repo Interest (INR): <b>{inr(repo_interest)}</b>", BODY),
-        Paragraph("Settlement: DVP-III through CCIL  |  Portfolio: Money Market - Liquidity  |  Dealer: P. Nair", BODY),
-        Spacer(1, 6 * mm), signatures(),
+        Paragraph(
+            "Settlement: DVP-III through CCIL  |  Portfolio: Money Market - Liquidity  |  Dealer: P. Nair",
+            BODY,
+        ),
+        Spacer(1, 6 * mm),
+        signatures(),
     ]
     build_pdf(OUT_DIR / f"{name}.pdf", story)
-    write_expected(name, {
-        "deal_id": deal_id, "deal_type": "REVERSE_REPO", "instrument_type": "GSEC", "buy_sell": "BUY",
-        "platform": "CROMS (CCIL)", "trade_date": trade, "settlement_date": leg1,
-        "security_name": "6.99% GS 2031", "isin": isin, "coupon_rate": coupon, "maturity_date": maturity,
-        "face_value": fv, "price": leg1_price, "accrued_interest": acc1, "consideration": leg1_amount,
-        "currency": "INR", "counterparty": "Alpha Co-operative Bank Ltd (MOCK)", "settlement_mode": "DVP-III",
-        "portfolio": "Money Market - Liquidity", "dealer": "P. Nair",
-        "repo": {
-            "repo_rate": repo_rate, "repo_days": repo_days, "day_count": "ACT/365",
-            "leg1_date": leg1, "leg1_price": leg1_price, "leg1_accrued_days": acc1_days,
-            "leg1_accrued_interest": acc1, "leg1_amount": leg1_amount,
-            "leg2_date": leg2, "leg2_price": leg2_price, "leg2_accrued_days": acc2_days,
-            "leg2_accrued_interest": acc2, "leg2_amount": leg2_amount, "repo_interest": repo_interest,
+    write_expected(
+        name,
+        {
+            "deal_id": deal_id,
+            "deal_type": "REVERSE_REPO",
+            "instrument_type": "GSEC",
+            "buy_sell": "BUY",
+            "platform": "CROMS (CCIL)",
+            "trade_date": trade,
+            "settlement_date": leg1,
+            "security_name": "6.99% GS 2031",
+            "isin": isin,
+            "coupon_rate": coupon,
+            "maturity_date": maturity,
+            "face_value": fv,
+            "price": leg1_price,
+            "accrued_interest": acc1,
+            "consideration": leg1_amount,
+            "currency": "INR",
+            "counterparty": "Alpha Co-operative Bank Ltd (MOCK)",
+            "settlement_mode": "DVP-III",
+            "portfolio": "Money Market - Liquidity",
+            "dealer": "P. Nair",
+            "repo": {
+                "repo_rate": repo_rate,
+                "repo_days": repo_days,
+                "day_count": "ACT/365",
+                "leg1_date": leg1,
+                "leg1_price": leg1_price,
+                "leg1_accrued_days": acc1_days,
+                "leg1_accrued_interest": acc1,
+                "leg1_amount": leg1_amount,
+                "leg2_date": leg2,
+                "leg2_price": leg2_price,
+                "leg2_accrued_days": acc2_days,
+                "leg2_accrued_interest": acc2,
+                "leg2_amount": leg2_amount,
+                "repo_interest": repo_interest,
+            },
         },
-    })
+    )
 
 
 if __name__ == "__main__":

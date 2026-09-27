@@ -22,8 +22,8 @@ D = 8  # hours per day
 # Sub:   (id, title, refs, hours)
 PHASES = [
     ("PH0", "Project setup & tooling", "v0.0.1", "M1.1", "A clean, protected repo with lint, types, tests and CI running before any feature code.", [
-        ("T0.1", "Repository hygiene", "13§4, 13§11", "-", "`main` protected; every task in this plan is an issue on the board", [
-            ("0.1.1", "Commit docs/config; merge or rename `vendace` → `main`; protect `main` (CI + 1 review)", "13§4.1", 0.5),
+        ("T0.1", "Repository hygiene", "13§4, 13§11", "-", "`master` protected; every task in this plan is an issue on the board", [
+            ("0.1.1", "Commit docs/config; merge `bonds-parser` → `master`; add remote; protect `master` (CI + 1 review)", "13§4.1", 0.5),
             ("0.1.2", "Import `docs/task_breakdown.csv` into the tracker; add labels and board columns", "13§9", 0.5),
             ("0.1.3", "PR template and CODEOWNERS", "13§4.3", 0.25),
         ]),
@@ -322,7 +322,7 @@ def main() -> None:
         "|---|---|---|---|---|---|---|",
     ]
     grand = mvp = 0.0
-    for pid, title, rel, maps, goal, tasks in PHASES:
+    for pid, title, rel, maps, _goal, tasks in PHASES:
         hours = sum(s[3] for t in tasks for s in t[5])
         grand += hours
         if pid in {"PH0", "PH1", "PH2", "PH3", "PH4", "PH5"}:

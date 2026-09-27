@@ -1,7 +1,7 @@
 ID,Parent,Type,Title,Refs,Depends on,Estimate (h),Owner,Done when,Release
 PH0,,Phase,Project setup & tooling,,,4.25,,"A clean, protected repo with lint, types, tests and CI running before any feature code.",v0.0.1
-T0.1,PH0,Task,Repository hygiene,"13§4, 13§11",-,1.25,,`main` protected; every task in this plan is an issue on the board,v0.0.1
-0.1.1,T0.1,Sub-task,Commit docs/config; merge or rename vendace → main; protect main (CI + 1 review),13§4.1,,0.5,,,v0.0.1
+T0.1,PH0,Task,Repository hygiene,"13§4, 13§11",-,1.25,,`master` protected; every task in this plan is an issue on the board,v0.0.1
+0.1.1,T0.1,Sub-task,Commit docs/config; merge bonds-parser → master; add remote; protect master (CI + 1 review),13§4.1,,0.5,,,v0.0.1
 0.1.2,T0.1,Sub-task,Import docs/task_breakdown.csv into the tracker; add labels and board columns,13§9,,0.5,,,v0.0.1
 0.1.3,T0.1,Sub-task,PR template and CODEOWNERS,13§4.3,,0.25,,,v0.0.1
 T0.2,PH0,Task,Developer tooling,"13§3, 10§12",T0.1,1,,`pre-commit run --all-files` passes,v0.0.1
