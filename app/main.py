@@ -1,7 +1,7 @@
 """FastAPI application factory (docs/03_lld.md §3.1).
 
-PH0 provides the app shell with Swagger metadata. Routers, middleware and exception
-handlers are added from PH1 onwards (docs/14_task_breakdown.md).
+Routers: /health (PH1), /api/v1/parse (PH1). Middleware (request id, CORS, access log) and
+auth arrive in PH4; the remaining routers in PH3-PH6 (docs/14_task_breakdown.md).
 """
 
 from __future__ import annotations
@@ -9,6 +9,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from app import __version__
+from app.api import errors, health, parse
 from app.config import Settings, get_settings
 
 OPENAPI_TAGS = [
@@ -41,6 +42,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url="/openapi.json" if docs else None,
     )
     app.state.settings = settings
+    errors.install(app)
+    app.include_router(health.router)
+    app.include_router(parse.router)
     return app
 
 
