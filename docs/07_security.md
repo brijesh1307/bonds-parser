@@ -176,6 +176,9 @@ credential as shared by all its users, restrict CORS, and rotate on every staff 
 - **Logs:** application logs contain request ID, client ID, route, status, duration, slip ID — **never**
   the `Authorization` header, secrets, PDF text or deal values. Audit `changes` hold deal field diffs
   by design (see `06_audit_trail.md` §5.6) and the audit table is protected like deal data.
+- **PAN (`counterparty_pan`):** personal data. Output in full in the deal by business decision (baseline §5),
+  so API responses and export files must be handled as confidential. Never logged; **masked** in audit
+  `changes` / `details` (`ABCDE****F`). Real slips containing PANs stay in `samples/real/` (git-ignored).
 - **Error responses:** no stack traces, SQL or file paths; `500` returns `request_id` only.
 - **Retention and deletion (assumption, confirm with compliance):** slips + PDFs kept as long as the
   institution's trade-record retention (default aligned with `BONDS_AUDIT_RETENTION_YEARS=8`); deletion via

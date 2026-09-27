@@ -68,10 +68,16 @@ class Deal(BaseModel):
     accrued_interest: PlainDecimal | None = None
     discount_amount: PlainDecimal | None = None
     consideration: PlainDecimal | None = Field(None, examples=["52264305.56"])
+    stamp_duty: PlainDecimal | None = None
+    settlement_reference: str | None = None
     currency: str | None = None
     settlement_currency: str | None = None
     fx_rate: PlainDecimal | None = None
     counterparty: str | None = None
+    counterparty_pan: str | None = Field(
+        None, description="Counterparty PAN. Personal data: handle outputs as confidential."
+    )
+    is_market_linked: bool | None = None
     broker: str | None = None
     settlement_mode: str | None = None
     portfolio: str | None = None

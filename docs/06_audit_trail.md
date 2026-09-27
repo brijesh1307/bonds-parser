@@ -244,6 +244,8 @@ not evidence (Postgres sequences skip values on rollback).
 - Deal values appear only in `changes` (field-level diffs on approve / reparse) and identifying
   `details` (`deal_id`, `file_name`) — needed to show what was changed. The audit table is therefore
   classified like deal data (`07_security.md` §5).
+- `counterparty_pan` is **masked** wherever it would appear in `changes` or `details`: first five and
+  last character kept (`ABCDE****F`). The full PAN exists only in the deal output (baseline §5).
 - Diff format — one entry per changed field, dotted path for nested fields, values in their canonical
   JSON form (decimals as strings, dates ISO):
 

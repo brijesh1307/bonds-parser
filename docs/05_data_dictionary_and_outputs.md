@@ -55,7 +55,11 @@ Conventions for the tables below:
 | 29 | `currency` | str | ISO 4217 | – | – | Deal currency | `INR` | Currency; `(INR)` label suffix; profile currency |
 | 30 | `settlement_currency` | str | ISO 4217 | – | – | Settlement currency if different | `null` | Settlement Currency |
 | 31 | `fx_rate` | decimal | fx, as printed | – | – | FX rate deal → settlement currency | `null` | FX Rate, Exchange Rate |
+| 28a | `stamp_duty` | decimal | cash, 2 dp | – | – | Stamp duty on the trade (buyer amount = principal + stamp duty) | `"1.00"` | Stamp Duty, Stamp Duty to be borne by Buyer (Rs.) |
+| 28b | `settlement_reference` | str | as printed | – | – | Clearing settlement number; not unique per deal | `2100001` | Settlement No., Settlement Number |
 | 32 | `counterparty` | str | as printed | – | – | Counterparty name | `Anonymous (NDS-OM) - CCIL Novated` | Counterparty, Counter Party, Party Name, Client, Buyer / Seller |
+| 32a | `counterparty_pan` | str | 10 chars `AAAAA9999A`, full | – | – | Counterparty PAN. **Personal data**: full in outputs, never logged, masked in audit | `ABCDE1234F` (fictitious example) | Seller PAN No., Buyer PAN No., PAN (the one of the counterparty side) |
+| 32b | `is_market_linked` | bool | `true` / `false` / null | – | – | Market Linked Debenture flag (`instrument_type` stays `CORPORATE_BOND`) | `true` | derived from Type of Instrument (`Market Linked`) |
 | 33 | `broker` | str | as printed; `Direct` / `No Broker` ⇒ `null` | – | – | Broker | `null` | Broker, Broker Name |
 | 34 | `settlement_mode` | str | `DVP-I`, `DVP-II`, `DVP-III` when recognisable | – | – | Settlement mode | `DVP-III` | Settlement Mode, Settlement, Clearing |
 | 35 | `portfolio` | str | as printed | – | – | Portfolio / book / category | `AFS - Treasury` | Portfolio, Book, Portfolio / Book, Category, Investment Category |

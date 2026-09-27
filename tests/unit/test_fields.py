@@ -33,10 +33,13 @@ def test_normalise_label(label: str, full: str, short: str) -> None:
         ("Last Interest Paid On", "last_coupon_date"),
         ("Portfolio / Book", "portfolio"),
         ("Repo Rate", "repo.repo_rate"),
+        ("STAMP DUTY TO BE BORNE BY BUYER (Rs.)", "stamp_duty"),
+        ("SETTLEMENT NO.", "settlement_reference"),
     ],
 )
 def test_synonyms(label: str, path: str) -> None:
-    assert f.SYNONYMS[f.normalise_label(label)[0]] == path
+    full, short = f.normalise_label(label)  # lookup tries full, then without (...)
+    assert f.SYNONYMS.get(full, f.SYNONYMS.get(short)) == path
 
 
 def test_every_synonym_targets_a_mappable_field() -> None:
@@ -72,7 +75,9 @@ def test_required_fields_by_deal_type() -> None:
 
 
 def test_registry_matches_baseline() -> None:
-    assert len(f.TOP_LEVEL_FIELDS) == 41  # docs/05 §1 rows 1-43 minus identifiers and repo objects
+    # docs/05 §1: 45 top-level fields (incl. stamp_duty, settlement_reference, counterparty_pan,
+    # is_market_linked), not counting the identifiers and repo objects
+    assert len(f.TOP_LEVEL_FIELDS) == 45
     assert f.FIELD_SPECS["face_value"].kind == "nominal"
     assert f.FIELD_SPECS["price"].kind == "price"
     assert f.FIELD_SPECS["repo.leg2_amount"].kind == "cash"

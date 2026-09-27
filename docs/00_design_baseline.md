@@ -113,13 +113,23 @@ Top-level fields: `deal_id, deal_type, instrument_type, buy_sell, platform, trad
 settlement_date, security_name, issuer, credit_rating, isin, identifiers{isin,cusip,sedol,common_code},
 coupon_rate, coupon_frequency, maturity_date, last_coupon_date, day_count, tenor_days, face_value,
 face_value_per_unit, quantity, price, yield, principal_amount, accrued_days, accrued_interest,
-discount_amount, consideration, currency, settlement_currency, fx_rate, counterparty, broker,
+discount_amount, consideration, stamp_duty, settlement_reference, currency, settlement_currency, fx_rate,
+counterparty, counterparty_pan, is_market_linked, broker,
 settlement_mode, portfolio, dealer, bid_type, bid_amount, issuer_country, market, slip_locale,
 market_confidence, repo{…}`
 
 `repo` object: `repo_rate, repo_days, day_count, haircut, leg1_date, leg1_price, leg1_accrued_days,
 leg1_accrued_interest, leg1_amount, leg2_date, leg2_price, leg2_accrued_days,
 leg2_accrued_interest, leg2_amount, repo_interest`
+
+Added for client confirmation letters (JM Financial MLD format, 2026-09-27):
+- `stamp_duty` (decimal, cash): stamp duty on the trade; buyer amount = principal + stamp duty.
+- `settlement_reference` (str): clearing settlement number (`SETTLEMENT NO.`); not unique per deal.
+- `counterparty_pan` (str): counterparty's Indian PAN, output **in full** in the deal (JSON/XML/Excel) by
+  decision. It is personal data: never written to logs, and **masked** (`ABCDE****F`) in audit `changes`/`details`.
+- `is_market_linked` (bool): `true` for Market Linked Debentures; `instrument_type` stays `CORPORATE_BOND`.
+"Our side" for JM Financial client letters is JM Financial: `Our Buy from:- <client>` = `BUY`, counterparty = client,
+`consideration` = buyer settlement amount (incl. stamp duty), `principal_amount` = seller settlement amount.
 
 Enums:
 - `deal_type`: `OUTRIGHT, PRIMARY_AUCTION, PRIMARY_PLACEMENT, REPO, REVERSE_REPO, TREPS_BORROW, TREPS_LEND, LAF`

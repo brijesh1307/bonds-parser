@@ -126,7 +126,7 @@ DISCOUNT_INSTRUMENTS = frozenset(
 
 # --------------------------------------------------------------------------- field registry
 
-FieldType = Literal["str", "enum", "date", "decimal", "int", "float"]
+FieldType = Literal["str", "enum", "date", "decimal", "int", "float", "bool"]
 DecimalKind = Literal["nominal", "cash", "price", "yield", "rate", "fx"]
 
 
@@ -171,10 +171,14 @@ _TOP: list[FieldSpec] = [
     FieldSpec("accrued_interest", "decimal", kind="cash", description="Accrued interest"),
     FieldSpec("discount_amount", "decimal", kind="cash", description="Discount (discount instruments)"),
     FieldSpec("consideration", "decimal", kind="cash", description="Net settlement amount (repo: leg 1)"),
+    FieldSpec("stamp_duty", "decimal", kind="cash", description="Stamp duty on the trade"),
+    FieldSpec("settlement_reference", "str", description="Clearing settlement number (not unique per deal)"),
     FieldSpec("currency", "str", description="Deal currency (ISO 4217)"),
     FieldSpec("settlement_currency", "str", description="Settlement currency if different"),
     FieldSpec("fx_rate", "decimal", kind="fx", description="FX rate deal -> settlement currency"),
     FieldSpec("counterparty", "str", description="Counterparty"),
+    FieldSpec("counterparty_pan", "str", description="Counterparty PAN (personal data; masked in audit)"),
+    FieldSpec("is_market_linked", "bool", description="Market Linked Debenture flag"),
     FieldSpec("broker", "str", description="Broker (Direct / No Broker -> null)"),
     FieldSpec("settlement_mode", "str", description="Settlement mode, e.g. DVP-III"),
     FieldSpec("portfolio", "str", description="Portfolio / book / category"),
@@ -412,6 +416,8 @@ _SYNONYM_LABELS: dict[str, tuple[str, ...]] = {
     ),
     "accrued_interest": ("Accrued Interest", "Accrued Int.", "Broken Period Interest", "Interest Amount"),
     "discount_amount": ("Discount Amount", "Discount"),
+    "stamp_duty": ("Stamp Duty", "Stamp Duty Amount", "Stamp Duty to be borne by Buyer"),
+    "settlement_reference": ("Settlement No", "Settlement No.", "Settlement Number"),
     "consideration": (
         "Total Consideration",
         "Net Consideration",
