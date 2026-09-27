@@ -1,0 +1,14 @@
+samples/real/*
+!samples/real/README.md
+__pycache__/
+*.pyc
+output/
+.venv/
+data/
+.pytest_cache/
+.env
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/

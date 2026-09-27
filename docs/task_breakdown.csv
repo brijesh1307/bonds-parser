@@ -1,0 +1,205 @@
+ID,Parent,Type,Title,Refs,Depends on,Estimate (h),Owner,Done when,Release
+PH0,,Phase,Project setup & tooling,,,4.25,,"A clean, protected repo with lint, types, tests and CI running before any feature code.",v0.0.1
+T0.1,PH0,Task,Repository hygiene,"13§4, 13§11",-,1.25,,`main` protected; every task in this plan is an issue on the board,v0.0.1
+0.1.1,T0.1,Sub-task,Commit docs/config; merge or rename vendace → main; protect main (CI + 1 review),13§4.1,,0.5,,,v0.0.1
+0.1.2,T0.1,Sub-task,Import docs/task_breakdown.csv into the tracker; add labels and board columns,13§9,,0.5,,,v0.0.1
+0.1.3,T0.1,Sub-task,PR template and CODEOWNERS,13§4.3,,0.25,,,v0.0.1
+T0.2,PH0,Task,Developer tooling,"13§3, 10§12",T0.1,1,,`pre-commit run --all-files` passes,v0.0.1
+0.2.1,T0.2,Sub-task,"pyproject.toml: ruff, mypy, pytest settings",13§5 It0,,0.5,,,v0.0.1
+0.2.2,T0.2,Sub-task,".pre-commit-config.yaml: ruff, ruff-format, mypy, block files under samples/real/","10§12, R-13",,0.25,,,v0.0.1
+0.2.3,T0.2,Sub-task,Install requirements-dev.txt in .venv; verify versions,11§1.2,,0.25,,,v0.0.1
+T0.3,PH0,Task,Application skeleton,"B§8, 03§1",T0.2,1.5,,`import app.main` works; settings show B§9 defaults,v0.0.1
+0.3.1,T0.3,Sub-task,"Package tree app/{api,schemas,services,engine,engine/profiles,export,db}",B§8,,0.25,,,v0.0.1
+0.3.2,T0.3,Sub-task,app/config.py: Settings.from_env() with all BONDS_* defaults,"03§3.2, B§9, NFR-21",,0.5,,,v0.0.1
+0.3.3,T0.3,Sub-task,app/errors.py: exception hierarchy mapped to HTTP codes,"03§8, B§7",,0.5,,,v0.0.1
+0.3.4,T0.3,Sub-task,tests/test_architecture.py: engine imports no FastAPI/SQLAlchemy/services/db,"13§1, NFR-16",,0.25,,,v0.0.1
+T0.4,PH0,Task,Continuous integration,"13§7, 10§11",T0.3,0.5,,CI green on every push,v0.0.1
+0.4.1,T0.4,Sub-task,.github/workflows/ci.yml: ruff → mypy → pytest → pip-audit,13§7,,0.5,,,v0.0.1
+PH1,,Phase,Walking skeleton,,,12.25,,Mock slip 01 goes PDF → `POST /api/v1/parse` → JSON through every layer.,v0.0.2
+T1.1,PH1,Task,Canonical fields,"B§5, 05§1, 03§2.1",T0.3,2.5,,"`""Ticket No""` resolves to `deal_id`; field list equals B§5",v0.0.2
+1.1.1,T1.1,Sub-task,"Enums: DealType, InstrumentType, BuySell, DayCount, BidType, Market, SlipStatus, Method",03§2.1,,0.5,,,v0.0.2
+1.1.2,T1.1,Sub-task,"FIELDS, REPO_FIELDS with value types; required fields by deal type",B§5,,0.5,,,v0.0.2
+1.1.3,T1.1,Sub-task,Label synonym map and norm_label (full and parentheses-stripped keys),"deal_slip_standard_formats§4, 03§4.4",,1,,,v0.0.2
+1.1.4,T1.1,Sub-task,Unit tests for label lookups,10§3,,0.5,,,v0.0.2
+T1.2,PH1,Task,Engine data structures,03§2.2,T1.1,0.75,,Dataclasses importable and typed (mypy clean),v0.0.2
+1.2.1,T1.2,Sub-task,"KeyValue, ExtractedDocument, FieldValue, TemplateDefinition, MarketProfile, EngineResult",03§2.2,,0.75,,,v0.0.2
+T1.3,PH1,Task,Normalisers (core),"03§4.10–4.11, 05§8, FR-11",T1.1,3,,"`""5,00,00,000.00""` → 50000000.00; `""24-Sep-2026""` → 2026-09-24",v0.0.2
+1.3.1,T1.3,Sub-task,"parse_date: DMY numeric, month names, ISO",03§4.10,,0.75,,,v0.0.2
+1.3.2,T1.3,Sub-task,"parse_amount: Indian grouping, Cr / Lakh / Mn in value or label","03§4.11, B§4",,0.75,,,v0.0.2
+1.3.3,T1.3,Sub-task,"parse_rate, parse_int, find_isin + ISO 6166 check digit",03§3.9,,0.5,,,v0.0.2
+1.3.4,T1.3,Sub-task,Table-driven unit tests + hypothesis property tests,"10§3, 10§4",,1,,,v0.0.2
+T1.4,PH1,Task,Extraction: label|value tables,"03§4.1, FR-01, FR-14",T1.2,2,,Mock 01 yields all 24 pairs with page + bbox,v0.0.2
+1.4.1,T1.4,Sub-task,"Open PDF, page sizes, text-layer check → UNREADABLE","03§3.9, 03 A5",,0.5,,,v0.0.2
+1.4.2,T1.4,Sub-task,find_tables + cell bboxes → KeyValue(source=table),03§4.1,,1,,,v0.0.2
+1.4.3,T1.4,Sub-task,Test on mock 01,10§3,,0.5,,,v0.0.2
+T1.5,PH1,Task,Minimal pipeline + golden harness,"03§3.9, 10§5.1","T1.3, T1.4",1.75,,Golden test for mock 01 green,v0.0.2
+1.5.1,T1.5,Sub-task,"Map by synonym (method synonym, confidence 0.95)",B§4,,0.5,,,v0.0.2
+1.5.2,T1.5,Sub-task,"Build deal, required-field check, provisional status",B§3,,0.5,,,v0.0.2
+1.5.3,T1.5,Sub-task,Decimal-aware golden comparison; enable mock 01,10§5.1,,0.75,,,v0.0.2
+T1.6,PH1,Task,First endpoints,"04§4.1–4.2, FR-04, FR-29",T1.5,1.75,,`/health` and `/api/v1/parse` work in Swagger,v0.0.2
+1.6.1,T1.6,Sub-task,"app/main.py: app factory, Swagger metadata, GET /health",03§3.1,,0.5,,,v0.0.2
+1.6.2,T1.6,Sub-task,POST /api/v1/parse (JSON) + export/json_export.py (Decimal → string),"04§4.2, 05§5.11",,1,,,v0.0.2
+1.6.3,T1.6,Sub-task,TestClient tests,10§6,,0.25,,,v0.0.2
+T1.7,PH1,Task,Debug tool,13§3,T1.4,0.5,,`python -m app.cli debug-extract <pdf>` prints every KeyValue,v0.0.2
+1.7.1,T1.7,Sub-task,cli debug-extract,13§3,,0.5,,,v0.0.2
+PH2,,Phase,Parser engine complete,,,17.25,,"All 4 mock slips match their expected JSON; market, validation and status work.",v0.0.3
+T2.1,PH2,Task,Extraction: all layouts,03§4.1–4.4,T1.4,4.5,,"Mocks 02, 03, 04 yield every expected pair",v0.0.3
+2.1.1,T2.1,Sub-task,"Table classifier: label|value, 4/6-column label|value, grid (label_like rule)",03§4.1,,1,,,v0.0.3
+2.1.2,T2.1,Sub-task,Grids with one or many value rows (key = row label + header),03§4.3,,1,,,v0.0.3
+2.1.3,T2.1,Sub-task,ISIN overflow repair in grid cells,03§4.2,,0.5,,,v0.0.3
+2.1.4,T2.1,Sub-task,"Text outside tables: Label: value, | split, 10 pt gap pairs, signature-row skip",03§4.4,,1.5,,,v0.0.3
+2.1.5,T2.1,Sub-task,Tests on mocks 02–04,10§3,,0.5,,,v0.0.3
+T2.2,PH2,Task,Label lookup: full chain,"03§4.5, 03§4.8, B§4",T1.5,1.5,,Confidence values match the B§4 table,v0.0.3
+2.2.1,T2.2,Sub-task,Abbreviation expansion (confidence 0.90),03§4.5,,0.5,,,v0.0.3
+2.2.2,T2.2,Sub-task,"Fuzzy match (difflib ≥ 0.85, labels ≥ 4 chars)",03§4.5,,0.5,,,v0.0.3
+2.2.3,T2.2,Sub-task,Candidate resolution order,03§4.8,,0.5,,,v0.0.3
+T2.3,PH2,Task,Market detection,"09§3–4, 03§4.9, FR-10",T2.1,3.25,,4 mocks → `IN`; synthetic US slip → `NEEDS_REVIEW`,v0.0.3
+2.3.1,T2.3,Sub-task,"Collect signals: ISIN prefix, identifiers, currency, settlement system, platform, name style, number format, BIC",09§3,,1.5,,,v0.0.3
+2.3.2,T2.3,Sub-task,"Weighted vote, 0.70 cut-off, issuer_country, slip_locale","09§3.1, B§4",,0.5,,,v0.0.3
+2.3.3,T2.3,Sub-task,profiles/IN.json + profile loader,09§4.1,,0.75,,,v0.0.3
+2.3.4,T2.3,Sub-task,Tests,10§3,,0.5,,,v0.0.3
+T2.4,PH2,Task,Normalisers: enums,"FR-11, 03§3.9",T1.3,2,,Every enum normaliser has passing unit tests,v0.0.3
+2.4.1,T2.4,Sub-task,"deal_type, buy_sell, instrument_type, platform, settlement_mode",03§3.9,,1,,,v0.0.3
+2.4.2,T2.4,Sub-task,"day_count, frequency, bid_type, broker (""Direct"" → null)",03§3.9,,0.5,,,v0.0.3
+2.4.3,T2.4,Sub-task,Unit tests,10§3,,0.5,,,v0.0.3
+T2.5,PH2,Task,Derivation rules,03§4.12,T2.4,2,,Goldens 03 and 04 green,v0.0.3
+2.5.1,T2.5,Sub-task,Coupon / tenor from security name; currency,03§4.12,,0.5,,,v0.0.3
+2.5.2,T2.5,Sub-task,Repo leg 1 → top-level fields; repo_days from dates,03§4.12,,0.5,,,v0.0.3
+2.5.3,T2.5,Sub-task,buy_sell default by deal type; platform from text; auction counterparty; sign-off dealer,03§4.12,,1,,,v0.0.3
+T2.6,PH2,Task,Validation checks,"03§4.13, deal_slip_standard_formats§5, FR-12",T2.5,2.5,,One failing-case test per check passes,v0.0.3
+2.6.1,T2.6,Sub-task,"ISIN check digit, date order, weekend settlement",03§4.13,,0.5,,,v0.0.3
+2.6.2,T2.6,Sub-task,"Principal, consideration, discount, quantity",03§4.13,,0.75,,,v0.0.3
+2.6.3,T2.6,Sub-task,Repo legs with precision-scaled tolerance,"03§4.13, 03 A10",,0.5,,,v0.0.3
+2.6.4,T2.6,Sub-task,Tests,10§3,,0.75,,,v0.0.3
+T2.7,PH2,Task,Confidence and status decision,"B§3–4, 03§4.14–4.15, FR-13","T2.6, T2.3",1.5,,All 4 goldens green (04 `maturity_date` exception),v0.0.3
+2.7.1,T2.7,Sub-task,Confidence per method; low_confidence list,03§4.14,,0.5,,,v0.0.3
+2.7.2,T2.7,Sub-task,Status decision + table test,03§4.15,,0.5,,,v0.0.3
+2.7.3,T2.7,Sub-task,Enable all goldens; document the 04 exception,10§5.2,,0.5,,,v0.0.3
+PH3,,Phase,"Persistence, slips & templates",,,18.75,,Upload → `NEW_TEMPLATE` → preview → approve → next slip of that layout `PARSED`.,v0.0.4
+T3.1,PH3,Task,Database,"03§7, B§6",T0.3,2.25,,`init-db` creates `data/bonds.db` with 5 tables,v0.0.4
+3.1.1,T3.1,Sub-task,"db/database.py: engine, session, SQLite pragmas",03§7.2,,0.5,,,v0.0.4
+3.1.2,T3.1,Sub-task,"db/models.py: clients, slips, templates, template_versions, audit_log",03§7.1,,1.5,,,v0.0.4
+3.1.3,T3.1,Sub-task,cli init-db,03§3.4,,0.25,,,v0.0.4
+T3.2,PH3,Task,Templates in the engine,"03§4.6–4.7, FR-09",T2.7,4,,Same labels score 1.0; region rule reads bbox text,v0.0.4
+3.2.1,T3.2,Sub-task,"Fingerprint, Jaccard, keyword gate, threshold 0.80",03§4.6–4.7,,1,,,v0.0.4
+3.2.2,T3.2,Sub-task,"Apply label_map, region_rules, regex_rules, constants, ignore, accepted_derived, market / date_order pin","B§6, 08",,2,,,v0.0.4
+3.2.3,T3.2,Sub-task,Unit tests,10§3,,1,,,v0.0.4
+T3.3,PH3,Task,Template service,"03§3.8, FR-07, FR-08, FR-19","T3.1, T3.2",2.5,,Approve twice → versions 1 and 2; UNIQUE enforced,v0.0.4
+3.3.1,T3.3,Sub-task,"build_definition(spec, base)",03§3.8,,1,,,v0.0.4
+3.3.2,T3.3,Sub-task,Create v1 / add version; active-definition cache,03§3.8,,1,,,v0.0.4
+3.3.3,T3.3,Sub-task,List / get,04§4.14–4.15,,0.5,,,v0.0.4
+T3.4,PH3,Task,Slip service,"03§3.8, 03§6.1–6.3, 03§9",T3.3,5.5,,"Service tests for upload, list, preview, approve pass",v0.0.4
+3.4.1,T3.4,Sub-task,"Receive upload: stream, SHA-256, 413 size, 415 magic bytes, 422 pages / encrypted","07§4, FR-02",,1.5,,,v0.0.4
+3.4.2,T3.4,Sub-task,"Create slip: pipeline outside transaction, store result, duplicate_of",03§9.1–9.2,,1,,,v0.0.4
+3.4.3,T3.4,Sub-task,Get / list with filters and pagination,"04§2.4, FR-17",,0.75,,,v0.0.4
+3.4.4,T3.4,Sub-task,Preview with draft template (nothing stored),"FR-06, 03§6.2",,0.75,,,v0.0.4
+3.4.5,T3.4,Sub-task,"Approve: 422 missing, 409 validation, 409 state; template create / version; APPROVED","FR-07, 03§6.3",,1.5,,,v0.0.4
+T3.5,PH3,Task,"Slip, template and schema API","04§3, 04§4.3–4.9, 4.14–4.15, 4.20",T3.4,4.5,,Flow test green,v0.0.4
+3.5.1,T3.5,Sub-task,schemas/* Pydantic models,"03§3.7, 05§5",,1.5,,,v0.0.4
+3.5.2,T3.5,Sub-task,"Routers: slips (upload, list, get, pdf, preview, approve), templates (list, get), schema/fields",04§4,,1.5,,,v0.0.4
+3.5.3,T3.5,Sub-task,RFC 7807 error handlers,"04§2.6, FR-28",,0.5,,,v0.0.4
+3.5.4,T3.5,Sub-task,Flow test with a generated unknown-layout PDF,10§6,,1,,,v0.0.4
+PH4,,Phase,Authentication & audit,,,10.25,,Every endpoint except `/health` needs header credentials; every action is in a tamper-evident audit log.,v0.0.5
+T4.1,PH4,Task,Audit service,"06§5, 03§4.16, FR-20",T3.1,3.5,,UPDATE/DELETE on `audit_log` fail; verify OK; 06§6 test vector reproduces,v0.0.5
+4.1.1,T4.1,Sub-task,Canonical JSON + SHA-256 chain (genesis = 64 zeros),"06§5.3, 03§4.16",,1,,,v0.0.5
+4.1.2,T4.1,Sub-task,record() in the caller's transaction; record_standalone() for failures,06§5.2,,0.75,,,v0.0.5
+4.1.3,T4.1,Sub-task,SQLite triggers blocking UPDATE / DELETE,03§7.3,,0.5,,,v0.0.5
+4.1.4,T4.1,Sub-task,verify(),06§5.4,,0.5,,,v0.0.5
+4.1.5,T4.1,Sub-task,Tests incl. test vector,10§7,,0.75,,,v0.0.5
+T4.2,PH4,Task,Audit wired into services,06§3.1,"T4.1, T3.5",1.5,,Each action writes exactly one row,v0.0.5
+4.2.1,T4.2,Sub-task,"Slip events: UPLOADED, PARSED (incl. one-shot /parse), VIEWED, PDF_DOWNLOADED, PREVIEWED, APPROVED (field diff), EXPORTED","06§3.1, B§7",,1,,,v0.0.5
+4.2.2,T4.2,Sub-task,"Template events: CREATED, VERSION_ADDED",06§3.1,,0.5,,,v0.0.5
+T4.3,PH4,Task,Header authentication,"07§2, 03§3.3, FR-22","T3.1, T4.1",2.5,,No header / bad secret / disabled → 401; valid → 200,v0.0.5
+4.3.1,T4.3,Sub-task,"HTTP Basic, Argon2 verify, constant-time, last_used_at, WWW-Authenticate",07§2.1–2.5,,1,,,v0.0.5
+4.3.2,T4.3,Sub-task,AUTH_FAILED audit,06§3.1,,0.25,,,v0.0.5
+4.3.3,T4.3,Sub-task,Auth dependency on every router except /health; Swagger security scheme,04§5,,0.5,,,v0.0.5
+4.3.4,T4.3,Sub-task,Tests + route-coverage test,10§8,,0.75,,,v0.0.5
+T4.4,PH4,Task,Client management CLI,"07§2.2, FR-25",T4.3,1,,Secret printed once; disabled client gets 401,v0.0.5
+4.4.1,T4.4,Sub-task,"add-client, list-clients, disable-client, rotate-secret + CLIENT_* audit",07§2.2,,1,,,v0.0.5
+T4.5,PH4,Task,Request context,"04§2.2, FR-24",T4.3,0.75,,`X-Request-ID` echoed; actor name in audit; CORS allow-list,v0.0.5
+4.5.1,T4.5,Sub-task,"Request-ID middleware, X-Actor-Name, CORS, access log","03§3.1, 03§9.4",,0.75,,,v0.0.5
+T4.6,PH4,Task,Audit and history endpoints,"04§4.12, 4.23–4.24, FR-21, FR-27",T4.2,1,,Flow test history shows the full timeline,v0.0.5
+4.6.1,T4.6,Sub-task,"GET /audit (filters), GET /audit/verify, GET /slips/{id}/history","04§4.12, 4.23–4.24",,1,,,v0.0.5
+PH5,,Phase,Outputs & MVP release,,,6.25,,"JSON, XML and Excel for every slip; documented Swagger; demo passes. **MVP (MS-0).**",v0.1.0
+T5.1,PH5,Task,Exporters,"05§6–7, FR-15",T3.5,3.5,,4 mocks × 3 formats open correctly; no floats,v0.1.0
+5.1.1,T5.1,Sub-task,"xml_export: null=""true"", <item> lists, tag sanitising",05§6.1,,1,,,v0.1.0
+5.1.2,T5.1,Sub-task,"excel_export: Deals / Key Values / Validation / Fields sheets, real dates and numbers, formula-injection guard",05§7,,1.5,,,v0.1.0
+5.1.3,T5.1,Sub-task,format= on /parse and /slips/{id}/export; content types and file names,"04§4.2, 04§4.11",,0.5,,,v0.1.0
+5.1.4,T5.1,Sub-task,Tests,10§6,,0.5,,,v0.1.0
+T5.2,PH5,Task,Swagger polish,"04§5, NFR-19","T5.1, T4.6",1,,"Every MVP endpoint has tag, summary, examples, error responses",v0.1.0
+5.2.1,T5.2,Sub-task,"Tags, summaries, examples, error responses, Authorize",04§5,,1,,,v0.1.0
+T5.3,PH5,Task,README quick start,11§1–2,T5.2,0.5,,A new developer runs the demo from the README alone,v0.1.0
+5.3.1,T5.3,Sub-task,"Install, init-db, add-client, run, curl examples",11§1–2,,0.5,,,v0.1.0
+T5.4,PH5,Task,Demo and release,"12§2, 13§5 It5",T5.3,1.25,,Demo runs clean; `v0.1.0` tagged,v0.1.0
+5.4.1,T5.4,Sub-task,"tools/demo.py: parse 4 mocks, onboard unknown layout, export, verify audit",12 M4.4,,0.75,,,v0.1.0
+5.4.2,T5.4,Sub-task,"CHANGELOG, tag v0.1.0, iteration review",13§7,,0.5,,,v0.1.0
+PH6,,Phase,Storage & remaining endpoints,,,32,,Production database and every Later endpoint.,v0.2.0
+T6.1,PH6,Task,PostgreSQL + migrations,"B§D4, 03§7, 12 P1.1–P1.3",PH5,10,,Suite green on SQLite and PostgreSQL,v0.2.0
+6.1.1,T6.1,Sub-task,Alembic baseline migration,12 P1.1,,4,,,v0.2.0
+6.1.2,T6.1,Sub-task,Postgres audit triggers + restricted role (INSERT/SELECT only),"06§5.1, 12 P1.2",,4,,,v0.2.0
+6.1.3,T6.1,Sub-task,"psycopg driver, pool, BONDS_DATABASE_URL switch",12 P1.3,,2,,,v0.2.0
+T6.2,PH6,Task,Slip endpoints (Later),"04§4.4, 4.10, 4.13, FR-03, FR-18",T6.1,6,,FR-03 and FR-18 acceptance met,v0.2.0
+6.2.1,T6.2,Sub-task,POST /slips/batch,04§4.4,,2,,,v0.2.0
+6.2.2,T6.2,Sub-task,POST /slips/{id}/reparse?force= (409 without force on APPROVED),04§4.10,,2,,,v0.2.0
+6.2.3,T6.2,Sub-task,DELETE /slips/{id} (audit row kept),"04§4.13, 06§5.7",,2,,,v0.2.0
+T6.3,PH6,Task,Template endpoints (Later),"04§4.16–4.19, FR-19, FR-27",T6.1,8,,FR-19 and FR-27 acceptance met,v0.2.0
+6.3.1,T6.3,Sub-task,"PUT (new version), PATCH (enable/disable/rename, TEMPLATE_UPDATED)",04§4.16–4.17,,4,,,v0.2.0
+6.3.2,T6.3,Sub-task,"POST /templates/import, GET /templates/{id}/history with version diffs",04§4.18–4.19,,4,,,v0.2.0
+T6.4,PH6,Task,Combined exports,"04§4.22, 4.25, FR-16",T6.1,8,,XML validates against XSD,v0.2.0
+6.4.1,T6.4,Sub-task,GET /exports/deals (DEALS_EXPORTED),04§4.22,,4,,,v0.2.0
+6.4.2,T6.4,Sub-task,GET /audit/export csv/xlsx/json (AUDIT_EXPORTED),04§4.25,,2,,,v0.2.0
+6.4.3,T6.4,Sub-task,XSD for the XML output,05§6,,2,,,v0.2.0
+PH7,,Phase,Operations,,,32,,"Deployable, observable and recoverable. Can run in parallel with PH8.",v0.3.0
+T7.1,PH7,Task,Containers,"11§4, 12 P4.1",T6.1,4,,`docker compose up` serves `/health` 200,v0.3.0
+7.1.1,T7.1,Sub-task,"Dockerfile (non-root, slim) + docker-compose (API + Postgres)",11§4,,4,,,v0.3.0
+T7.2,PH7,Task,CI/CD,"13§7, 12 P4.2",T7.1,8,,Merge to main deploys to Dev; tags deploy UAT/Prod with approval,v0.3.0
+7.2.1,T7.2,Sub-task,Postgres test matrix; image build; deploy to Dev + smoke test,13§7,,4,,,v0.3.0
+7.2.2,T7.2,Sub-task,Tag pipeline: UAT / Prod with manual approval,13§7,,4,,,v0.3.0
+T7.3,PH7,Task,Observability,"11§5.2, 11§7, NFR-15",T7.1,8,,"Dashboards: p95 latency, status counts, template hit rate",v0.3.0
+7.3.1,T7.3,Sub-task,structlog JSON logs with request id,03§9.4,,2,,,v0.3.0
+7.3.2,T7.3,Sub-task,Prometheus metrics + Sentry,11§7,,6,,,v0.3.0
+T7.4,PH7,Task,"Backups, retention","11§5.3–5.6, 06§5.8, NFR-12",T7.1,8,,Restore drill passes; audit verifies after restore,v0.3.0
+7.4.1,T7.4,Sub-task,"DB + uploads backup, restore drill",11§5.3,,4,,,v0.3.0
+7.4.2,T7.4,Sub-task,"Audit archive job (AUDIT_ARCHIVED), scheduled audit/verify","06§5.8, 11§5.5",,4,,,v0.3.0
+T7.5,PH7,Task,Transport security,"07§3, 07§6, NFR-06",T7.1,4,,TLS-only access verified,v0.3.0
+7.5.1,T7.5,Sub-task,"Reverse proxy TLS, HSTS, security headers, CORS to frontend, docs disabled in prod","07§3, 07§6",,4,,,v0.3.0
+PH8,,Phase,Hardening,,,52,,"Scans, locked PDFs, multi-deal PDFs, brute force and performance handled.",v0.4.0
+T8.1,PH8,Task,Brute-force limiter,"07§2.6, FR-23",PH5,4,,FR-23 acceptance met,v0.4.0
+8.1.1,T8.1,Sub-task,"Per-IP failure window, 429 + Retry-After, AUTH_BLOCKED",07§2.6,,4,,,v0.4.0
+T8.2,PH8,Task,OCR for scanned slips,"FR-14, R-03",PH5,16,,Scanned mock → `NEEDS_REVIEW` with correct values,v0.4.0
+8.2.1,T8.2,Sub-task,ocrmypdf / Tesseract path for UNREADABLE,FR-14,,12,,,v0.4.0
+8.2.2,T8.2,Sub-task,OCR confidence capped below threshold; tests,B§4,,4,,,v0.4.0
+T8.3,PH8,Task,Password-protected PDFs,"FR-30, R-01",PH5,8,,FR-30 acceptance met,v0.4.0
+8.3.1,T8.3,Sub-task,pikepdf decrypt with per-sender passwords held securely,"FR-30, 07§5",,8,,,v0.4.0
+T8.4,PH8,Task,Multi-deal PDFs,"FR-31, R-02, 05§5.10",T6.1,12,,FR-31 acceptance met,v0.4.0
+8.4.1,T8.4,Sub-task,Detect repeating deal rows; split into one deal per row,FR-31,,8,,,v0.4.0
+8.4.2,T8.4,Sub-task,API returns a list of deals per file; tests,05§5.10,,4,,,v0.4.0
+T8.5,PH8,Task,Holiday calendar & date ambiguity,"09§5, R-05",PH5,4,,Holiday settlement flagged; ambiguous dates lower confidence,v0.4.0
+8.5.1,T8.5,Sub-task,Indian holiday calendar loader + validation warning,09§5,,4,,,v0.4.0
+T8.6,PH8,Task,Robustness & performance,"NFR-01, NFR-02, NFR-09, 10§9",PH5,8,,p95 ≤ 3 s; malformed PDFs rejected safely,v0.4.0
+8.6.1,T8.6,Sub-task,Fuzz malformed / huge PDFs; parser time and memory limits,NFR-09,,4,,,v0.4.0
+8.6.2,T8.6,Sub-task,Performance test,10§9,,4,,,v0.4.0
+PH9,,Phase,"Real formats, UAT & go-live",,,232,,"Your real slip formats parse automatically; ops, security and audit sign off.",v1.0.0
+T9.1,PH9,Task,Real slip collection,"samples/real/README, 12 P5.1",-,24,,≥ 5 masked slips per top source,v1.0.0
+9.1.1,T9.1,Sub-task,Collect and mask real slips per source,12 P5.1,,24,,,v1.0.0
+T9.2,PH9,Task,Template onboarding,"08, 10§5.4, 12 P5.2","T9.1, PH5",40,,Each source has an approved template and a replica regression test,v1.0.0
+9.2.1,T9.2,Sub-task,Onboard templates via preview / approve,08,,24,,,v1.0.0
+9.2.2,T9.2,Sub-task,Synthetic replica fixtures + expected JSON per template,10§5.4,,16,,,v1.0.0
+T9.3,PH9,Task,User acceptance,12 P5.4,T9.2,40,,UAT sign-off; no open Sev-1/Sev-2,v1.0.0
+9.3.1,T9.3,Sub-task,UAT with back-office ops (frontend or Swagger),12 P5.4,,40,,,v1.0.0
+T9.4,PH9,Task,Parallel run,"NFR-03, NFR-04, 12 P5.5",T9.3,80,,≥ 95 % auto-PARSED on known templates; 0 wrong unflagged values,v1.0.0
+9.4.1,T9.4,Sub-task,"10 business days manual keying vs parser, daily diff",12 P5.5,,80,,,v1.0.0
+T9.5,PH9,Task,Security assurance,"07§9, NFR-10",PH7,40,,No open Critical/High findings,v1.0.0
+9.5.1,T9.5,Sub-task,VAPT and fixes,07§9,,40,,,v1.0.0
+T9.6,PH9,Task,Go-live,"12§8, 11","T9.4, T9.5",8,,Go-live checklist complete; `v1.0.0` tagged,v1.0.0
+9.6.1,T9.6,Sub-task,"Runbook hand-over, production clients, cut-over, go/no-go","12§8, 11",,8,,,v1.0.0
+PH10,,Phase,Additional market profiles,,,32,,"US, UK and Eurobond slips parse with their own rules.",v1.1.0
+T10.1,PH10,Task,Profile interface,"09§4, FR-26",PH5,4,,`GET /schema/markets` lists profiles,v1.1.0
+10.1.1,T10.1,Sub-task,Profile loader interface + GET /api/v1/schema/markets,04§4.21,,4,,,v1.1.0
+T10.2,PH10,Task,US profile,09§4.2,T10.1,8,,US mock → `PARSED` with template,v1.1.0
+10.2.1,T10.2,Sub-task,"CUSIP check digit, month-first dates, 32nds prices (99-16+), UST, ACT/ACT",09§4.2,,8,,,v1.1.0
+T10.3,PH10,Task,UK and Eurobond profiles,09§4.3–4.4,T10.1,12,,GB and INTL mocks → `PARSED` with template,v1.1.0
+10.3.1,T10.3,Sub-task,"GB: SEDOL, GILT, ACT/ACT",09§4.3,,6,,,v1.1.0
+10.3.2,T10.3,Sub-task,"INTL: Eurobond, Common Code, 30E/360",09§4.4,,6,,,v1.1.0
+T10.4,PH10,Task,Further markets on demand,09§7,T10.1,8,,Only when real slips exist,v1.1.0
+10.4.1,T10.4,Sub-task,"DE / JP profiles (BUND, JGB) using the 09§7 checklist",09§7,,8,,,v1.1.0
