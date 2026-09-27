@@ -1,6 +1,6 @@
 [project]
 name = "bonds-parser"
-version = "0.0.1"
+version = "0.0.2"
 description = "Bond deal slip parser API: PDF deal slips to a canonical deal as JSON, XML or Excel"
 requires-python = ">=3.11"
 readme = "README.md"
