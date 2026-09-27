@@ -24,7 +24,7 @@ Conventions for the tables below:
 
 | # | Field | Type | Format | Enum values | Required when | Description | Example | Typical slip labels |
 |---|---|---|---|---|---|---|---|---|
-| 1 | `deal_id` | str | as printed, trimmed | – | ALL | Deal / ticket / reference number of the issuing desk or platform | `GS/NDSOM/2026/004571` | Deal Reference No., Deal ID, Ticket No, Ref, Deal No., Trade ID, Order No., Confirmation No., Contract No. |
+| 1 | `deal_id` | str | as printed, trimmed | – | – (optional; many slips print none) | Deal / ticket / reference number of the issuing desk or platform | `GS/NDSOM/2026/004571` | Deal Reference No., Deal ID, Ticket No, Ref, Deal No., Trade ID, Order No., Confirmation No., Contract No. |
 | 2 | `deal_type` | enum | – | `OUTRIGHT`, `PRIMARY_AUCTION`, `PRIMARY_PLACEMENT`, `REPO`, `REVERSE_REPO`, `TREPS_BORROW`, `TREPS_LEND`, `LAF` | ALL | Kind of transaction | `OUTRIGHT` | Deal Type, Transaction, Transaction Type, Deal Type & Direction; derived from letter text (`Primary Auction`, `Allotment`) |
 | 3 | `instrument_type` | enum | – | `GSEC`, `SDL`, `TBILL`, `CMB`, `CORPORATE_BOND`, `PSU_BOND`, `CP`, `CD` (+ `UST`, `GILT`, `BUND`, `JGB`, `EUROBOND` with market profiles) | – | Instrument class | `GSEC` | Security Type, Instrument Type; derived from security name (`GS 2034`, `DTB`, `NCD`) |
 | 4 | `buy_sell` | enum | – | `BUY`, `SELL` | `OUTRIGHT` | Our direction. Reverse repo = `BUY` (leg 1); repo = `SELL`; primary auction = `BUY` | `BUY` | Buy/Sell, Direction; derived from Deal Type (`PURCHASE`/`BOUGHT` → BUY, `SALE`/`SOLD` → SELL) |
@@ -72,7 +72,7 @@ Required-field summary (baseline §5):
 
 | Deal type | Required |
 |---|---|
-| all | `deal_id, deal_type, trade_date, settlement_date, security_name, isin, face_value, consideration` |
+| all | `deal_type, trade_date, settlement_date, security_name, isin, face_value, consideration` (`deal_id` is optional) |
 | `OUTRIGHT` | + `buy_sell, price` |
 | `PRIMARY_AUCTION` | + `price` |
 | `REPO`, `REVERSE_REPO` | + `repo.repo_rate, repo.leg1_amount, repo.leg2_date, repo.leg2_amount` |

@@ -220,8 +220,7 @@ IDENTIFIER_FIELDS: tuple[str, ...] = tuple(f.path.removeprefix("identifiers.") f
 # Market fields come from market detection, never from a slip label.
 MARKET_FIELDS = frozenset({"issuer_country", "market", "slip_locale", "market_confidence"})
 
-BASE_REQUIRED: tuple[str, ...] = (
-    "deal_id",
+BASE_REQUIRED: tuple[str, ...] = (  # deal_id is optional (baseline §5)
     "deal_type",
     "trade_date",
     "settlement_date",

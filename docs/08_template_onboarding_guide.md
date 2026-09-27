@@ -96,7 +96,7 @@ in `/docs`.
      "key_bbox": [40.0, 300.1, 110.0, 310.1], "value_bbox": [150.0, 300.1, 172.4, 310.1],
      "mapped_to": null}
   ],
-  "missing_required": ["deal_id", "trade_date", "face_value", "consideration", "price"],
+  "missing_required": ["trade_date", "face_value", "consideration", "price"],
   "validation": [
     {"check": "isin_check_digit", "passed": true},
     {"check": "principal", "passed": false,
@@ -115,8 +115,8 @@ in `/docs`.
 | `missing_required` | Required canonical fields with no value | Each one needs a `label_map` entry, a region rule, a regex rule or a constant |
 | `validation` | Results of the checks (ISIN check digit, principal, consideration, discount, quantity, repo legs, dates, holidays) | A failure after mapping usually means a wrong mapping or a unit problem (lakh / crore) |
 
-Required fields (baseline §5): `deal_id, deal_type, trade_date, settlement_date, security_name,
-isin, face_value, consideration`, plus `buy_sell, price` for `OUTRIGHT`, `price` for
+Required fields (baseline §5): `deal_type, trade_date, settlement_date, security_name, isin,
+face_value, consideration` (`deal_id` is optional), plus `buy_sell, price` for `OUTRIGHT`, `price` for
 `PRIMARY_AUCTION`, and `repo.repo_rate, repo.leg1_amount, repo.leg2_date, repo.leg2_amount` for
 `REPO` / `REVERSE_REPO`. `GET $API/schema/fields` lists every canonical field with its type,
 `required` flag and enum values.

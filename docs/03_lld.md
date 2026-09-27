@@ -597,7 +597,7 @@ LEG_SUFFIXES: dict[str, str]                   # "date" → "date", "price" → 
                                                # "accrued days"/"accr days" → "accrued_days",
                                                # "accrued interest"/"accrued int" → "accrued_interest",
                                                # "amount"/"settlement amount" → "amount"
-BASE_REQUIRED = ("deal_id", "deal_type", "trade_date", "settlement_date",
+BASE_REQUIRED = ("deal_type", "trade_date", "settlement_date",   # deal_id optional (baseline §5)
                  "security_name", "isin", "face_value", "consideration")
 REQUIRED_BY_TYPE = {"OUTRIGHT": ("buy_sell", "price"), "PRIMARY_AUCTION": ("price",),
                     "REPO": ("repo.repo_rate", "repo.leg1_amount", "repo.leg2_date", "repo.leg2_amount"),

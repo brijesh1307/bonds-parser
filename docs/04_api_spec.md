@@ -738,7 +738,7 @@ the UI.
 ```json
 {
   "items": [
-    { "name": "deal_id", "group": "Identity", "type": "string", "required_for": ["ALL"], "enum": null },
+    { "name": "deal_id", "group": "Identity", "type": "string", "required_for": [], "enum": null },
     { "name": "buy_sell", "group": "Identity", "type": "enum", "required_for": ["OUTRIGHT"], "enum": ["BUY", "SELL"] },
     { "name": "face_value", "group": "Economics", "type": "decimal", "required_for": ["ALL"], "enum": null },
     { "name": "repo.leg2_amount", "group": "Repo", "type": "decimal", "required_for": ["REPO", "REVERSE_REPO"], "enum": null }

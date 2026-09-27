@@ -229,7 +229,7 @@ Values are normalised too:
 | Discount instrument | `face_value − consideration` ≈ `discount_amount` |
 | Quantity | `quantity × face_value_per_unit` = `face_value` |
 | Repo | `leg1_amount + repo_interest` = `leg2_amount`; repo_days = leg2 − leg1 dates |
-| Required fields | deal_id, deal_type, trade_date, settlement_date, isin / security, face_value, consideration |
+| Required fields | deal_type, trade_date, settlement_date, isin / security, face_value, consideration |
 
 A failed check doesn't stop the parse. It is recorded in `_validation`, so the output can be
 reviewed rather than silently trusted.

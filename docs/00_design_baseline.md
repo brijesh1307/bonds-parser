@@ -129,7 +129,9 @@ Enums:
 - `bid_type`: `COMPETITIVE, NON_COMPETITIVE`
 - `market`: `IN, US, GB, DE, JP, INTL, UNKNOWN`
 
-Required (all deal types): `deal_id, deal_type, trade_date, settlement_date, security_name, isin, face_value, consideration`.
+Required (all deal types): `deal_type, trade_date, settlement_date, security_name, isin, face_value, consideration`.
+`deal_id` is optional: many slips (e.g. client confirmation letters) print no deal/ticket number;
+it is captured when present, and a stored slip is always identified by its own slip id.
 Plus: `OUTRIGHT` → `buy_sell, price`; `PRIMARY_AUCTION` → `price`;
 `REPO`/`REVERSE_REPO` → `repo.repo_rate, repo.leg1_amount, repo.leg2_date, repo.leg2_amount`.
 
