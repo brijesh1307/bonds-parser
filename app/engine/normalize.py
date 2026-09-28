@@ -1,8 +1,8 @@
 """Turn raw slip text into typed values (docs/03_lld.md §3.9, §4.10, §4.11; docs/05 §8).
 
-PH1 covers strings, dates, amounts, rates, integers and ISINs. Enum normalisation
-(deal_type, buy_sell, day_count, ...) is added in PH2 (docs/14_task_breakdown.md T2.4);
-until then enum fields normalise to None without an issue.
+Covers strings, dates, amounts, rates, integers, ISINs, PANs and the enum / canonical-name
+fields (deal_type, buy_sell, instrument_type, day_count, bid_type, platform, settlement_mode,
+broker). Enum values that cannot be recognised raise ENUM_UNKNOWN.
 """
 
 from __future__ import annotations
@@ -62,6 +62,7 @@ _D_MON_Y = re.compile(r"^(\d{1,2})[-/ .]+([A-Za-z]{3,9})\.?[-/ .]+(\d{4}|\d{2})$
 _MON_D_Y = re.compile(r"^([A-Za-z]{3,9})\.?\s+(\d{1,2})\s+(\d{4})$")
 _NUMERIC = re.compile(r"^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4}|\d{2})$")
 _COMPACT = re.compile(r"^\d{8}$")
+_WEEKDAY = re.compile(r"\b(mon|tues?|wed(nes)?|thu(rs)?|fri|sat(ur)?|sun)(day)?\b\.?,?", re.I)
 
 
 def _year(y: str) -> int:
@@ -80,6 +81,7 @@ def _make(y: int, m: int, d: int) -> date:
 
 def parse_date(raw: str, profile: MarketProfile | None = None, hints: DocHints | None = None) -> date:
     s = _PAREN.sub(" ", _TIME.sub(" ", raw))
+    s = _WEEKDAY.sub(" ", s)  # "Friday, December 24, 2021"
     s = _ORDINAL.sub(r"\1", s).replace(",", " ")
     s = " ".join(s.split())
 
@@ -243,6 +245,16 @@ def normalize_value(
     text = " ".join(raw.split())
     if path == "isin":
         return normalize_isin(text)
+    if path == "security_name":
+        return clean_security_name(text) or None
+    if path in ("counterparty_pan", "_seller_pan", "_buyer_pan"):
+        return normalize_pan(text)
+    if path == "platform":
+        return canonical_platform(text, profile) or text
+    if path == "settlement_mode":
+        return settlement_mode(text) or text
+    if path == "broker":
+        return None if _NO_BROKER.search(text) else text
     if spec.type == "str":
         return text or None
     if spec.type == "date":
@@ -256,4 +268,99 @@ def normalize_value(
             parse_amount(text, profile, label=label) if spec.kind in ("nominal", "cash") else parse_rate(text)
         )
         return scale(value, spec.kind)
-    return None  # enum (PH2) and float fields are not read from slip labels in PH1
+    if spec.type == "enum":
+        enum_value = normalize_enum(path, text, profile)
+        if enum_value is None:
+            raise NormalizationError("ENUM_UNKNOWN", f"{text!r} is not a known {path} value")
+        return enum_value
+    return None  # float / bool fields are derived, never read from a slip label
+
+
+# --------------------------------------------------------------------------- names, PAN, enums
+
+_NO_BROKER = re.compile(r"^\s*(direct|no broker|nil|none|n\.?a\.?|-+)\b|\(no broker\)", re.I)
+_ISIN_IN_NAME = re.compile(
+    r"\(\s*ISIN\s*[:\-–]?\s*[A-Z]{2}[A-Z0-9]{9}\d\s*\)"  # "(ISIN - INE999M07033)"
+    r"|[/|,]?\s*(ISIN\s*[:\-–]?\s*)?\b[A-Z]{2}[A-Z0-9]{9}\d\b"  # "/ INE999A07087", "ISIN: X"
+)
+PAN_RE = re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b")
+
+
+def clean_security_name(text: str) -> str:
+    """Drop an ISIN printed inside the name cell ('SECURITY NAME/ISIN NUMBER')."""
+    name = _ISIN_IN_NAME.sub(" ", text)
+    return " ".join(name.split()).strip(" -/|,")
+
+
+def normalize_pan(raw: str) -> str:
+    m = PAN_RE.search(raw.upper())
+    if not m:
+        raise NormalizationError("VALUE_UNPARSEABLE", f"no PAN in {raw!r}")
+    return m.group(0)
+
+
+def canonical_platform(text: str, profile: MarketProfile | None) -> str | None:
+    for pattern, name in (profile.platforms if profile else {}).items():
+        if re.search(pattern, text, re.I):
+            return name
+    return None
+
+
+def settlement_mode(text: str) -> str | None:
+    m = re.search(r"\bDVP[\s-]*(III|II|I|3|2|1)\b", text, re.I)
+    if not m:
+        return None
+    return "DVP-" + {"1": "I", "2": "II", "3": "III"}.get(m.group(1), m.group(1).upper())
+
+
+_DEAL_TYPES: list[tuple[str, str]] = [
+    (r"\breverse\s+repo\b", "REVERSE_REPO"),
+    (r"\btreps\b.*\bborrow|\bborrow.*\btreps\b", "TREPS_BORROW"),
+    (r"\btreps\b.*\blend|\blend.*\btreps\b", "TREPS_LEND"),
+    (r"\brepo\b", "REPO"),
+    (r"\b(laf|sdf|msf|vrrr?)\b", "LAF"),
+    (r"\b(auction|allotment)\b", "PRIMARY_AUCTION"),
+    (r"private\s+placement|\bebp\b", "PRIMARY_PLACEMENT"),
+    (r"\b(outright|purchase|purchased|sale|sold|buy|bought|sell)\b", "OUTRIGHT"),
+]
+_DAY_COUNTS: list[tuple[str, str]] = [
+    (r"\b30e\s*/\s*360\b", "30E/360"),
+    (r"\b30\s*/\s*360\b", "30/360"),
+    (r"\bact(ual)?\s*/\s*act(ual)?\b", "ACT/ACT"),
+    (r"\bact(ual)?\s*/\s*365\b", "ACT/365"),
+    (r"\bact(ual)?\s*/\s*364\b", "ACT/364"),
+    (r"\bact(ual)?\s*/\s*360\b", "ACT/360"),
+]
+
+
+def buy_sell(text: str) -> str | None:
+    if re.search(r"\b(buy|bought|purchase|purchased)\b", text, re.I):
+        return "BUY"
+    if re.search(r"\b(sell|sold|sale)\b", text, re.I):
+        return "SELL"
+    return {"B": "BUY", "S": "SELL"}.get(text.strip().upper())
+
+
+def instrument_type(text: str, profile: MarketProfile | None) -> str | None:
+    for pattern, code in profile.instrument_patterns if profile else ():
+        if re.search(pattern, text, re.I):
+            return code
+    return None
+
+
+def normalize_enum(path: str, text: str, profile: MarketProfile | None = None) -> str | None:
+    """Raw slip text -> enum value (docs/03_lld.md §3.9 enum table); None when not recognised."""
+    field = path.removeprefix("repo.")
+    if field == "buy_sell":
+        return buy_sell(text)
+    if field == "deal_type":
+        return next((v for rx, v in _DEAL_TYPES if re.search(rx, text, re.I)), None)
+    if field == "day_count":
+        return next((v for rx, v in _DAY_COUNTS if re.search(rx, text, re.I)), None)
+    if field == "bid_type":
+        if re.search(r"non[\s-]*competitive|\bncb\b", text, re.I):
+            return "NON_COMPETITIVE"
+        return "COMPETITIVE" if re.search(r"competitive", text, re.I) else None
+    if field == "instrument_type":
+        return instrument_type(text, profile)
+    return None

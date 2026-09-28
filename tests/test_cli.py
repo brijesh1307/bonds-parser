@@ -15,7 +15,7 @@ def test_debug_extract_lists_pairs_and_mappings(slip01: Path, capsys: pytest.Cap
     assert "Deal Reference No." in out
     assert "deal_id (synonym 0.95)" in out
     assert "-- unmapped --" in out  # Trade Time, SGL / CSGL A/c
-    assert "24 pairs, 22 mapped, 2 unmapped" in out
+    assert "25 pairs, 23 mapped, 2 unmapped" in out  # 24 table pairs + prose ISIN
 
 
 def test_debug_extract_scanned(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

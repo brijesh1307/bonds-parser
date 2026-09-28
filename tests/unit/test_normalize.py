@@ -211,4 +211,7 @@ def test_normalize_value_dispatch() -> None:
     assert normalize_value("accrued_days", "167 (30/360)") == 167
     assert normalize_value("counterparty", "  Anonymous  (NDS-OM) ") == "Anonymous (NDS-OM)"
     assert normalize_value("isin", "IN0020240A75") == "IN0020240A75"
-    assert normalize_value("deal_type", "OUTRIGHT PURCHASE") is None  # enum normalisers arrive in PH2
+    assert normalize_value("deal_type", "OUTRIGHT PURCHASE") == "OUTRIGHT"
+    with pytest.raises(NormalizationError) as e:
+        normalize_value("day_count", "whatever basis")
+    assert e.value.code == "ENUM_UNKNOWN"

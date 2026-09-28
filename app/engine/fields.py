@@ -137,6 +137,7 @@ class FieldSpec:
     kind: DecimalKind | None = None
     enum: tuple[str, ...] | None = None
     description: str = ""
+    internal: bool = False  # working field: mappable, used by derivation, never in the deal output
 
 
 def _enum(e: type[StrEnum]) -> tuple[str, ...]:
@@ -216,7 +217,20 @@ _REPO: list[FieldSpec] = [
     FieldSpec("repo.repo_interest", "decimal", kind="cash", description="Leg 2 amount - leg 1 amount"),
 ]
 
-FIELD_SPECS: dict[str, FieldSpec] = {f.path: f for f in (*_TOP, *_IDENTIFIERS, *_REPO)}
+# Working fields for slips that print both sides (e.g. client confirmation letters). Derivation
+# picks 'our' side from buy_sell: BUY -> consideration = buyer amount, counterparty_pan = seller PAN.
+_INTERNAL: list[FieldSpec] = [
+    FieldSpec(
+        "_seller_amount", "decimal", kind="cash", description="Seller settlement amount", internal=True
+    ),
+    FieldSpec("_buyer_amount", "decimal", kind="cash", description="Buyer settlement amount", internal=True),
+    FieldSpec("_seller_pan", "str", description="Seller PAN", internal=True),
+    FieldSpec("_buyer_pan", "str", description="Buyer PAN", internal=True),
+    FieldSpec("_seller_name", "str", description="Seller name", internal=True),
+    FieldSpec("_buyer_name", "str", description="Buyer name", internal=True),
+]
+
+FIELD_SPECS: dict[str, FieldSpec] = {f.path: f for f in (*_TOP, *_IDENTIFIERS, *_REPO, *_INTERNAL)}
 TOP_LEVEL_FIELDS: tuple[str, ...] = tuple(f.path for f in _TOP)
 REPO_FIELDS: tuple[str, ...] = tuple(f.path.removeprefix("repo.") for f in _REPO)
 IDENTIFIER_FIELDS: tuple[str, ...] = tuple(f.path.removeprefix("identifiers.") for f in _IDENTIFIERS)
@@ -282,7 +296,6 @@ _SYNONYM_LABELS: dict[str, tuple[str, ...]] = {
         "Deal Ticket No",
         "Ref",
         "Ref No",
-        "Reference",
         "Reference No",
         "Reference Number",
         "Trade ID",
@@ -311,8 +324,18 @@ _SYNONYM_LABELS: dict[str, tuple[str, ...]] = {
         "Product Type",
         "Asset Class",
         "Instrument Category",
+        "Type of Instrument",
+        "Type of Security",
     ),
-    "platform": ("Platform", "Trading Platform", "Exchange", "Venue", "Execution Venue", "Trading System"),
+    "platform": (
+        "Platform",
+        "Trading Platform",
+        "Exchange",
+        "Venue",
+        "Execution Venue",
+        "Trading System",
+        "Market Type",
+    ),
     "trade_date": (
         "Trade Date",
         "Deal Date",
@@ -350,7 +373,7 @@ _SYNONYM_LABELS: dict[str, tuple[str, ...]] = {
     "issuer": ("Issuer", "Issuer Name", "Name of Issuer"),
     "credit_rating": ("Rating", "Credit Rating"),
     "isin": ("ISIN", "ISIN Code", "ISIN No", "ISIN Number", "Security ISIN"),
-    "coupon_rate": ("Coupon Rate", "Coupon", "Interest Rate", "Rate of Interest"),
+    "coupon_rate": ("Coupon Rate", "Coupon", "Interest Rate", "Rate of Interest", "Interest / Coupon Rate"),
     "coupon_frequency": ("Coupon Frequency", "Interest Frequency", "Frequency", "Payment Frequency"),
     "maturity_date": ("Maturity Date", "Maturity", "Date of Maturity", "Redemption Date", "Final Maturity"),
     "last_coupon_date": (
@@ -373,6 +396,8 @@ _SYNONYM_LABELS: dict[str, tuple[str, ...]] = {
         "FV",
         "Face Amount",
         "Par Value",
+        "Quantum",
+        "Total Quantum",
     ),
     "face_value_per_unit": (
         "FV per Bond",
@@ -389,6 +414,9 @@ _SYNONYM_LABELS: dict[str, tuple[str, ...]] = {
         "No. of Units",
         "No. of Securities",
         "Number of Bonds",
+        "No. of NCDs",
+        "No. of NCD",
+        "No. of Debentures",
     ),
     "price": (
         "Clean Price",
@@ -418,6 +446,12 @@ _SYNONYM_LABELS: dict[str, tuple[str, ...]] = {
     "discount_amount": ("Discount Amount", "Discount"),
     "stamp_duty": ("Stamp Duty", "Stamp Duty Amount", "Stamp Duty to be borne by Buyer"),
     "settlement_reference": ("Settlement No", "Settlement No.", "Settlement Number"),
+    "_seller_amount": ("Seller Settlement Amount", "Seller Amount", "Amount Receivable by Seller"),
+    "_buyer_amount": ("Buyer Settlement Amount", "Buyer Amount", "Amount Payable by Buyer"),
+    "_seller_pan": ("Seller PAN No", "Seller PAN", "PAN of Seller"),
+    "_buyer_pan": ("Buyer PAN No", "Buyer PAN", "PAN of Buyer"),
+    "_seller_name": ("Seller Name", "Seller"),
+    "_buyer_name": ("Buyer Name", "Buyer"),
     "consideration": (
         "Total Consideration",
         "Net Consideration",
@@ -496,6 +530,33 @@ LEG_SUFFIXES: dict[str, str] = {
     "consideration": "amount",
     "settlement consideration": "amount",
 }
+
+
+ABBREVIATIONS: dict[str, str] = {
+    "dt": "date",
+    "stl": "settlement",
+    "sett": "settlement",
+    "settl": "settlement",
+    "amt": "amount",
+    "qty": "quantity",
+    "cpty": "counterparty",
+    "accr": "accrued",
+    "int": "interest",
+    "mat": "maturity",
+    "cons": "consideration",
+    "yld": "yield",
+    "px": "price",
+    "ref": "reference",
+    "desc": "description",
+    "sec": "security",
+    "nbr": "no",
+    "num": "no",
+    "number": "no",
+}
+
+
+def expand_abbreviations(normalised: str) -> str:
+    return " ".join(ABBREVIATIONS.get(tok, tok) for tok in normalised.split())
 
 
 def leg_lookup(normalised: str) -> str | None:

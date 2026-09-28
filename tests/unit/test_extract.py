@@ -15,8 +15,10 @@ def test_mock01_yields_all_24_label_value_pairs_with_positions(slip01: Path) -> 
     assert doc.has_text_layer
     assert doc.pages == 1
     assert doc.page_sizes == [(595.3, 841.9)]  # A4 in points
-    assert len(doc.pairs) == 24
-    assert all(p.source is Source.table and p.page == 1 for p in doc.pairs)
+    table = [p for p in doc.pairs if p.source is Source.table]
+    assert len(table) == 24
+    assert [(p.key, p.value) for p in doc.pairs if p.source is Source.prose] == [("ISIN", "IN0020240A75")]
+    doc.pairs = table
     first = doc.pairs[0]
     assert (first.key, first.value) == ("Deal Reference No.", "GS/NDSOM/2026/004571")
     for p in doc.pairs:
@@ -31,7 +33,7 @@ def test_mock01_yields_all_24_label_value_pairs_with_positions(slip01: Path) -> 
 
 
 def test_accepts_bytes(slip01: Path) -> None:
-    assert len(extract(slip01.read_bytes(), max_pages=20).pairs) == 24
+    assert len(extract(slip01.read_bytes(), max_pages=20).pairs) == 25
 
 
 def test_page_without_text_is_unreadable() -> None:
@@ -82,5 +84,5 @@ def test_classify_table() -> None:
     assert (
         classify_table([["ISIN", "Coupon", "Maturity"], ["IN0020240A75", "7.10%", "08-Apr-2034"]]) == "GRID"
     )
-    assert classify_table([["Deal ID", "X1", "Trade Date", "24-Sep-2026"]]) == "KV2"
+    assert classify_table([["Deal ID", "X1", "Trade Date", "24-Sep-2026"]]) == "KV_ROWS"
     assert classify_table([["1", "2", "3"], ["4", "5", "6"]]) == "UNKNOWN"

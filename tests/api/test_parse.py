@@ -68,12 +68,16 @@ def test_parse_mock01_returns_deal_with_positions(client: TestClient, slip01: Pa
     )
     assert len(fv["bbox"]) == 4
 
-    assert len(body["key_values"]) == 24
+    assert len(body["key_values"]) == 25  # 24 table pairs + the ISIN found in the text (prose)
     mapped = {kv["key"]: kv["mapped_to"] for kv in body["key_values"]}
     assert mapped["Deal Reference No."] == "deal_id"
     assert mapped["Trade Time"] is None
     assert {kv["key"] for kv in body["unmapped"]} == {"Trade Time", "SGL / CSGL A/c"}
-    assert body["missing_required"] == ["deal_type"]  # enum normalisers arrive in PH2
+    assert body["missing_required"] == []
+    assert (deal["deal_type"], deal["buy_sell"], deal["instrument_type"]) == ("OUTRIGHT", "BUY", "GSEC")
+    assert (deal["platform"], deal["settlement_mode"], deal["day_count"]) == ("NDS-OM", "DVP-III", "30/360")
+    assert body["market"]["market"] == "IN" and body["market"]["profile_available"] is True
+    assert body["validation"] == []  # principal, consideration, accrued checks all pass
 
 
 def test_scanned_pdf_is_unreadable(client: TestClient) -> None:

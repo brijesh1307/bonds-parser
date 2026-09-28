@@ -35,8 +35,8 @@ def debug_extract(pdf: Path, max_pages: int) -> int:
         return 0
     rows = []
     for kv in doc.pairs:
-        hit = lookup_label(kv.key)
-        target = f"{hit[0]} ({hit[1].value} {hit[2]:.2f})" if hit else "-- unmapped --"
+        hits = lookup_label(kv.key)
+        target = ", ".join(f"{p} ({m.value} {c:.2f})" for p, m, c in hits) if hits else "-- unmapped --"
         rows.append((kv.source.value, str(kv.page), kv.key, kv.value, target, _fmt_bbox(kv.value_bbox)))
     headers = ("source", "page", "key", "value", "maps to", "value bbox")
     widths = [min(max(len(r[i]) for r in [headers, *rows]), 40) for i in range(len(headers))]

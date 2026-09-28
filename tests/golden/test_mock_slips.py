@@ -27,24 +27,10 @@ KNOWN_EXCEPTIONS: dict[tuple[str, str], Any] = {
     ("04_market_repo_reverse_repo", "maturity_date"): None,
 }
 
-# Fields the parser cannot produce yet, by the phase that adds them (docs/14_task_breakdown.md).
-# Strict: a pending field that starts matching fails the test until it is removed from this list.
-_PH2_ENUMS_AND_DERIVATION = {  # T2.3 market, T2.4 enum normalisers, T2.5 derivation rules
-    "deal_type",
-    "instrument_type",
-    "buy_sell",
-    "platform",
-    "coupon_frequency",
-    "day_count",
-    "currency",
-    "settlement_mode",
-}
-PENDING: dict[str, set[str] | str] = {
-    "01_gsec_outright_purchase": _PH2_ENUMS_AND_DERIVATION,
-    "02_corporate_ncd_outright_sale": "PH2",  # horizontal grids (T2.1)
-    "03_tbill_primary_auction_allotment": "PH2",  # letter / prose layout (T2.1, T2.5)
-    "04_market_repo_reverse_repo": "PH2",  # two-leg grid (T2.1)
-}
+# Fields / layouts the parser cannot produce yet, by the phase that adds them.
+# Strict: a pending field that starts matching fails the test until it is removed here.
+# Empty since PH2: every mock layout parses completely.
+PENDING: dict[str, set[str] | str] = {}
 
 INT_FIELDS = {
     "accrued_days",

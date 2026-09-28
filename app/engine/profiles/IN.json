@@ -1,0 +1,74 @@
+{
+  "code": "IN",
+  "name": "India",
+  "status": "active",
+  "locale": "en-IN",
+  "date": {
+    "order": "DMY",
+    "formats": ["%d-%b-%Y", "%d/%m/%Y", "%d.%m.%Y", "%Y-%m-%d", "%d %B %Y", "%d%m%Y"],
+    "allow_ambiguous_numeric": true
+  },
+  "numbers": {
+    "decimal_sep": ".",
+    "thousands_sep": ",",
+    "grouping": "indian",
+    "accept_western_grouping": true,
+    "units": {"cr": 10000000, "crs": 10000000, "crore": 10000000, "crores": 10000000,
+              "lakh": 100000, "lakhs": 100000, "lac": 100000, "lacs": 100000,
+              "mn": 1000000, "million": 1000000, "bn": 1000000000}
+  },
+  "currency": "INR",
+  "identifiers": {"types": ["ISIN"], "isin_prefixes": ["IN"]},
+  "day_count": {
+    "GSEC": "30/360", "SDL": "30/360",
+    "TBILL": "ACT/364", "CMB": "ACT/364",
+    "CORPORATE_BOND": "ACT/ACT", "PSU_BOND": "ACT/ACT",
+    "CP": "ACT/365", "CD": "ACT/365",
+    "REPO": "ACT/365"
+  },
+  "coupon_frequency": {"GSEC": 2, "SDL": 2, "CORPORATE_BOND": 1, "PSU_BOND": 1},
+  "price_quoting": {"style": "decimal", "per": 100, "price_decimals": 4, "yield_decimals": 4},
+  "settlement_cycle": {"GSEC": "T+1", "SDL": "T+1", "TBILL": "T+1", "CMB": "T+1",
+                       "CORPORATE_BOND": "T+1", "PSU_BOND": "T+1", "CP": "T+0", "CD": "T+0"},
+  "calendar": {
+    "weekend": ["SAT", "SUN"],
+    "source": "RBI / FIMMDA published holiday list (Mumbai)",
+    "file": "app/engine/profiles/holidays/IN.json"
+  },
+  "signals": {
+    "settlement_systems": ["CCIL", "NSDL", "CDSL", "NCL", "NSE Clearing", "ICCL", "SGL", "CSGL", "RBI"],
+    "platforms": ["NDS-OM", "NSE RFQ", "BSE RFQ", "EBP", "CROMS", "TREPS", "E-Kuber", "ICDM"],
+    "keywords": ["RBI", "SEBI", "FIMMDA", "crore", "lakh"],
+    "currency_symbols": ["₹", "Rs.", "INR", "Rupees"],
+    "name_patterns": ["\\d+(\\.\\d+)?% GS \\d{4}", "\\bSDL\\b", "\\d{2,3} DTB \\d{8}", "\\bNCD\\b"]
+  },
+  "platform_names": {
+    "e-?kuber": "RBI E-Kuber",
+    "\\bcroms\\b": "CROMS (CCIL)",
+    "nds-?om": "NDS-OM",
+    "\\botc\\b.*\\bnse\\s*rfq\\b": "OTC / NSE RFQ",
+    "nse\\s*rfq": "NSE RFQ",
+    "\\botc\\b.*\\bbse\\s*rfq\\b": "OTC / BSE RFQ",
+    "bse\\s*rfq": "BSE RFQ",
+    "\\bicdm\\b": "ICDM (ICCL)",
+    "\\bebp\\b": "EBP",
+    "\\btreps\\b": "TREPS (CCIL)",
+    "\\botc\\b": "OTC"
+  },
+  "synonyms": {
+    "face_value": ["Nominal (Cr)", "FV (Rs. Cr)", "Amount (Cr)"],
+    "consideration": ["Net Payable", "Net Receivable", "Settlement Amt"],
+    "deal_id": ["Contract No", "Contract Note No"],
+    "security_name": ["Paper", "Scrip"]
+  },
+  "instrument_types": {
+    "TBILL":          {"patterns": ["\\bDTB\\b", "Treasury Bill", "\\bT-?Bill\\b"]},
+    "CMB":            {"patterns": ["\\bCMB\\b", "Cash Management Bill"]},
+    "SDL":            {"patterns": ["\\bSDL\\b", "State Development Loan"]},
+    "GSEC":           {"patterns": ["\\bGS\\b", "\\bGOI\\b", "Government Stock", "Government Securit", "\\bG-?Sec\\b"]},
+    "CP":             {"patterns": ["Commercial Paper", "\\bCP\\b"]},
+    "CD":             {"patterns": ["Certificate of Deposit", "\\bCD\\b"]},
+    "PSU_BOND":       {"patterns": ["\\bPSU\\b", "Tax Free"]},
+    "CORPORATE_BOND": {"patterns": ["\\bNCDs?\\b", "Debenture", "\\bMLD\\b", "\\bBonds?\\b"]}
+  }
+}

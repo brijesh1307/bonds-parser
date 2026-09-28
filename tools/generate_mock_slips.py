@@ -7,20 +7,26 @@ has to cope with real-world variety:
   2. Corporate bond / NCD outright sale    - header block + horizontal grid
   3. T-Bill primary auction allotment      - letter / memo style prose
   4. Market repo (reverse repo) in G-Sec   - two-leg table
+  5/6. Client confirmation letter for a Market Linked Debenture (MLD NCD) secondary
+       buy - 4-column table with merged cells, multi-line cells and label+value in one
+       cell (same structure as real dealer-to-client letters; all names/PANs fictitious)
 
 All figures are computed (accrued interest, consideration, YTM, repo leg 2),
 so the slips are internally consistent. All names and ISINs are fictitious.
 
-Usage:  python tools/generate_mock_slips.py
+Usage:  python tools/generate_mock_slips.py            # all slips
+        python tools/generate_mock_slips.py 05 06      # only slips 05 and 06
 Output: samples/mock/*.pdf and samples/mock/expected/*.json
 """
 
 from __future__ import annotations
 
 import json
+import sys
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -641,9 +647,216 @@ def market_repo() -> None:
     )
 
 
+# --------------------------------------------------------------------------- 5/6. Client letter (MLD NCD)
+
+LETTER_ENTITY = "ORCA WEALTH PRODUCTS LTD (MOCK)"
+LETTER_ENTITY_PAN = "AAACO1234Z"  # fictitious
+DISCLAIMER = (
+    "I/We, hereby unconditionally and irrevocably confirm and declare that I/we am/are fully competent "
+    "and eligible/authorized to undertake transactions in the above mentioned securities as per the terms "
+    "and conditions mentioned above. I/We solely assume and undertake all risks and/or liabilities that may "
+    "arise out of the transactions in the said securities."
+)
+
+
+def letter_table(rows: list[list[str]], spans: list[tuple[int, int, int]]) -> Table:
+    """4-column grid; spans = (row, first_col, last_col) merged cells, like the real letters."""
+    # Cells wrap like a Word table: every cell is a Paragraph; column 0 (labels) is bold.
+    NL = chr(10)
+    label = ParagraphStyle("cl", parent=BODY, fontName="Helvetica-Bold", fontSize=7.5, leading=9)
+    value = ParagraphStyle("cv", parent=BODY, fontSize=7.5, leading=9)
+    cells = [
+        [
+            Paragraph(escape(c).replace(NL, "<br/>"), label if j == 0 else value) if c else ""
+            for j, c in enumerate(row)
+        ]
+        for row in rows
+    ]
+    t = Table(cells, colWidths=(50 * mm, 46 * mm, 32 * mm, 42 * mm))
+    style = [
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ]
+    style += [("SPAN", (c0, r), (c1, r)) for r, c0, c1 in spans]
+    t.setStyle(TableStyle(style))
+    return t
+
+
+def client_letter(name: str, v: dict) -> None:
+    """Dealer-to-client confirmation of an MLD NCD bought from the client ("Our Buy from:-")."""
+    isin = isin_with_check(v["isin_base"])
+    qty, fv_unit, price = v["qty"], Decimal(v["fv_unit"]), Decimal(v["price"])
+    quantum = fv_unit * qty
+    seller_amt = q(quantum * price / 100)
+    stamp = Decimal(v["stamp"])
+    buyer_amt = seller_amt + stamp
+    deal_date, maturity = v["deal_date"], v["maturity"]
+    weekday_check(deal_date)
+
+    rows = [
+        ["DEAL TYPE", f"Our Buy from:- {v['client_cell']}", "", f"SELLER PAN No. {v['client_pan']}"],
+        ["BUYER NAME", LETTER_ENTITY, "", f"BUYER PAN No. {LETTER_ENTITY_PAN}"],
+        ["SECURITY NAME/ISIN NUMBER", v["security_cell"].format(isin=isin), "", ""],
+        ["UNDERLYING/REFERENCE INDEX", v["underlying"], "", ""],
+        [
+            "TYPE OF INSTRUMENT",
+            "Secured, Rated, Listed, Redeemable, Principal Protected Market Linked, Non-\n"
+            "Convertible Debentures",
+            "",
+            "",
+        ],
+        ["COUPON PAYMENT DATE", "On Maturity Date", "", ""],
+        ["INITIAL OBSERVATION DATE & LEVEL", v["initial_obs"], "", ""],
+        ["FINAL OBSERVATION DATE & LEVEL", v["final_obs"], "MATURITY DATE", v["maturity_text"]],
+        ["INTEREST/COUPON RATE", v["rate_text"], "", ""],
+        ["QUANTUM (Rs.)", str(quantum.quantize(Decimal(1))), "NO. OF NCDs.", str(qty)],
+        ["DEAL DATE/VALUE DATE", v["deal_date_text"], "FACE VALUE (Rs.)", inr(fv_unit)],
+        ["PRICE (Rs.)", str(price), "STAMP DUTY TO BE\nBORNE BY BUYER (Rs.)", str(stamp)],
+        ["SELLER SETTLEMENT AMOUNT (Rs.)", v["fmt_amount"](seller_amt), "", ""],
+        ["BUYER SETTLEMENT AMOUNT (Rs.)", v["fmt_amount"](buyer_amt), "", ""],
+        ["SETTLEMENT DETAILS", "CM BP ID : IN600001 | Market type : ICDM(T+0) | CM Name : ICCL", "", ""],
+        ["SETTLEMENT NO.", v["settlement_no"], "", ""],
+    ]
+    spans = [(0, 1, 2), (1, 1, 2)] + [(r, 1, 3) for r in (2, 3, 4, 5, 6, 8, 12, 13, 14, 15)]
+    story = [
+        Paragraph(v["letter_date_text"], BODY),
+        Spacer(1, 3 * mm),
+        Paragraph(
+            "To,<br/>" + v["client_name"] + "<br/>" + v["address"] + f"<br/>PAN:- {v['client_pan']}", BODY
+        ),
+        Spacer(1, 3 * mm),
+        Paragraph("Dear Sir / Madam,", BODY),
+        Paragraph(
+            "We refer to our discussions during which we agreed to BUY security as mentioned herein below "
+            "from you on a principal basis:",
+            BODY,
+        ),
+        Spacer(1, 2 * mm),
+        letter_table(rows, spans),
+        Spacer(1, 3 * mm),
+        Paragraph("Please confirm by return mail at confirmations@orca-wealth.example", BODY),
+        Paragraph(
+            "Yours Faithfully,<br/>For Orca Wealth Products Limited (MOCK)<br/>AUTHORISED SIGNATORY", BODY
+        ),
+        Spacer(1, 3 * mm),
+        Paragraph("Disclaimer:", BODY),
+        Paragraph(DISCLAIMER, BODY),
+        Paragraph(
+            "I am agreeable to SELL the security as per the terms mentioned above<br/>"
+            + v["client_name"]
+            + f"<br/>{v['client_pan']}",
+            BODY,
+        ),
+    ]
+    build_pdf(OUT_DIR / f"{name}.pdf", story)
+    write_expected(
+        name,
+        {
+            "deal_id": None,
+            "deal_type": "OUTRIGHT",
+            "instrument_type": "CORPORATE_BOND",
+            "is_market_linked": True,
+            "buy_sell": "BUY",
+            "platform": "ICDM (ICCL)",
+            "trade_date": deal_date,
+            "settlement_date": deal_date,
+            "security_name": v["security_name"],
+            "isin": isin,
+            "coupon_rate": v["coupon_rate"],
+            "maturity_date": maturity,
+            "face_value": quantum.quantize(Decimal(1)),
+            "face_value_per_unit": fv_unit,
+            "quantity": qty,
+            "price": price,
+            "principal_amount": seller_amt,
+            "stamp_duty": q(stamp),
+            "consideration": q(buyer_amt),
+            "settlement_reference": v["settlement_no"],
+            "currency": "INR",
+            "counterparty": v["client_name"],
+            "counterparty_pan": v["client_pan"],
+            "market": "IN",
+        },
+    )
+
+
+def mld_letter_individual() -> None:
+    client_letter(
+        "05_client_letter_mld_individual",
+        {
+            "client_name": "RAHUL DESHPANDE (MOCK)",
+            "client_cell": "RAHUL DESHPANDE (MOCK)",
+            "address": "12 SAMPLE CHS, MOCK ROAD, PUNE 411001",
+            "client_pan": "ABCPD1234E",
+            "isin_base": "INE999M0703",
+            "security_cell": "OWPL MLD FD Plus 24.12.2021 (ISIN - {isin})",
+            "security_name": "OWPL MLD FD Plus 24.12.2021",
+            "underlying": "Nifty 50 Index",
+            "initial_obs": "Date – Monday, July 27, 2020\nLevel – 11131.80",
+            "final_obs": "Date - Thursday, June 24, 2021\nLevel - 15790.45",
+            "maturity": date(2021, 12, 24),
+            "maturity_text": "Friday, December 24, 2021",
+            "rate_text": "11.00% p.a. (annualised)",
+            "coupon_rate": Decimal("11.00"),
+            "qty": 4,
+            "fv_unit": "250000",
+            "price": "115.2984",
+            "stamp": "1",
+            "deal_date": date(2021, 12, 7),
+            "deal_date_text": "7TH DECEMBER 2021",
+            "letter_date_text": "7th DECEMBER 2021",
+            "fmt_amount": lambda d: str(d.quantize(Decimal(1))),
+            "settlement_no": "2100001",
+        },
+    )
+
+
+def mld_letter_company() -> None:
+    client_letter(
+        "06_client_letter_mld_company",
+        {
+            "client_name": "SAHYADRI INVESTMENTS PRIVATE LTD (MOCK)",
+            "client_cell": "SAHYADRI INVESTMENTS PRIVATE\nLTD (MOCK)",
+            "address": "1 MOCK TOWER, SAMPLE MARG, MUMBAI 400001",
+            "client_pan": "AABCS1234K",
+            "isin_base": "INE999A0708",
+            "security_cell": "ORCA ASSET RECONSTRUCTION COMPANY LIMITED - TRANCHE XII BR NCD\n"
+            "09DC21 FVRS2LAC / {isin}",
+            "security_name": "ORCA ASSET RECONSTRUCTION COMPANY LIMITED - TRANCHE XII BR NCD 09DC21 FVRS2LAC",
+            "underlying": "10-year Government security price (Issue date October 7, 2019)\n"
+            "Bloomberg Ticker - IGB 6.45 10/07/29 Corp",
+            "initial_obs": "Date – Thursday, February 6, 2020\nLevel – 100.0000",
+            "final_obs": "Monday, November 8, 2021\nLevel:-100.65",
+            "maturity": date(2021, 12, 9),
+            "maturity_text": "Thursday, December 9, 2021",
+            "rate_text": "10.00% p.a. (annualised return calculated on XIRR basis)",
+            "coupon_rate": Decimal("10.00"),
+            "qty": 50,
+            "fv_unit": "200000",
+            "price": "118.6534",
+            "stamp": "12",
+            "deal_date": date(2021, 11, 22),
+            "deal_date_text": "22-NOV-2021",
+            "letter_date_text": "22 November 2021",
+            "fmt_amount": lambda d: f"{d:,.2f}",
+            "settlement_no": "2100002",
+        },
+    )
+
+
+GENERATORS = {
+    "01": gsec_outright,
+    "02": ncd_outright,
+    "03": tbill_auction,
+    "04": market_repo,
+    "05": mld_letter_individual,
+    "06": mld_letter_company,
+}
+
 if __name__ == "__main__":
     EXPECTED_DIR.mkdir(parents=True, exist_ok=True)
-    for fn in (gsec_outright, ncd_outright, tbill_auction, market_repo):
-        fn()
-    for p in sorted(OUT_DIR.glob("*.pdf")):
-        print("wrote", p.relative_to(ROOT))
+    wanted = set(sys.argv[1:]) or set(GENERATORS)
+    for prefix, fn in GENERATORS.items():
+        if prefix in wanted:
+            fn()
+            print("wrote", prefix, fn.__name__)
