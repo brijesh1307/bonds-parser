@@ -13,6 +13,7 @@ from app.main import create_app
 from tests.conftest import make_pdf
 
 PROBLEM = "application/problem+json"
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
 @pytest.fixture
@@ -117,7 +118,7 @@ def test_missing_file_and_bad_format_are_422_problems(client: TestClient, slip01
     r = client.post("/api/v1/parse")
     assert r.status_code == 422
     assert r.json()["type"] == "urn:bonds-parser:problem:request-validation"
-    r2 = _upload(client, slip01.read_bytes(), format="xml")
+    r2 = _upload(client, slip01.read_bytes(), format="pdf")
     assert r2.status_code == 422  # type: ignore[attr-defined]
 
 
@@ -149,3 +150,39 @@ def test_unexpected_error_is_500_problem_without_internals(
     body = r.json()  # type: ignore[attr-defined]
     assert body["type"] == "urn:bonds-parser:problem:internal-error"
     assert "secret" not in r.text  # type: ignore[attr-defined]
+
+
+def test_xml_download(client: TestClient) -> None:
+    from tests.conftest import mock_pdf
+
+    r = _upload(client, mock_pdf("05_client_letter_mld_individual").read_bytes(), format="xml")
+    assert r.status_code == 200  # type: ignore[attr-defined]
+    assert r.headers["content-type"].startswith("application/xml")  # type: ignore[attr-defined]
+    assert 'filename="slip.xml"' in r.headers["content-disposition"]  # type: ignore[attr-defined]
+    import xml.etree.ElementTree as ET
+
+    root = ET.fromstring(r.content)  # type: ignore[attr-defined]  # noqa: S314 - our own output
+    assert root.tag == "parse_result" and root.get("schema_version") == "1"
+    assert root.findtext("deal/counterparty") == "RAHUL DESHPANDE (MOCK)"
+    assert root.findtext("deal/consideration") == "1152985.00"
+    assert root.findtext("deal/is_market_linked") == "true"
+    assert root.find("deal/deal_id").get("null") == "true"  # type: ignore[union-attr]
+    assert len(root.findall("key_values/item")) > 20
+
+
+def test_xlsx_download(client: TestClient, slip01: Path) -> None:
+    import io
+    from datetime import datetime
+
+    from openpyxl import load_workbook
+
+    r = _upload(client, slip01.read_bytes(), format="xlsx")
+    assert r.status_code == 200  # type: ignore[attr-defined]
+    assert r.headers["content-type"] == XLSX  # type: ignore[attr-defined]
+    assert 'filename="GS_NDSOM_2026_004571.xlsx"' in r.headers["content-disposition"]  # type: ignore[attr-defined]
+    wb = load_workbook(io.BytesIO(r.content))  # type: ignore[attr-defined]
+    assert wb.sheetnames == ["Deal", "Fields", "Key Values", "Validation"]
+    deal = {row[0]: row[1] for row in wb["Deal"].iter_rows(min_row=2, values_only=True)}
+    assert deal["consideration"] == 52264305.56  # a real number, not text
+    assert isinstance(deal["trade_date"], datetime)  # a real Excel date
+    assert deal["deal_type"] == "OUTRIGHT"
