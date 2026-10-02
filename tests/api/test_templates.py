@@ -203,3 +203,10 @@ def test_schema_endpoints(client: TestClient) -> None:
     assert "market" not in fields  # detected, never mapped
     assert fields["_buyer_amount"]["type"] == "decimal"
     assert client.get("/api/v1/schema/markets").json()[0]["code"] == "IN"
+
+
+def test_xsd_endpoint(client: TestClient) -> None:
+    r = client.get("/api/v1/schema/xsd")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("application/xml")
+    assert b'name="parse_result"' in r.content

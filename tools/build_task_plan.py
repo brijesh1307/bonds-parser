@@ -118,7 +118,7 @@ PHASES = [
             ("2.7.3", "Enable all goldens; document the 04 exception", "10§5.2", 0.5),
         ]),
     ]),
-    ("PH3", "Persistence, slips & templates", "v0.0.4", "M2.1, M2.2, M3.3 (part)", "Upload → `NEW_TEMPLATE` → preview → approve → next slip of that layout `PARSED`.", [
+    ("PH3", "Templates (file-based; no slip storage)", "v0.1.0", "M2.1, M2.2, M3.3 (part)", "Upload → `NEW_TEMPLATE` → preview → approve → next slip of that layout `PARSED`.", [
         ("T3.1", "Database", "03§7, B§6", "T0.3", "`init-db` creates `data/bonds.db` with 5 tables", [
             ("3.1.1", "`db/database.py`: engine, session, SQLite pragmas", "03§7.2", 0.5),
             ("3.1.2", "`db/models.py`: clients, slips, templates, template_versions, audit_log", "03§7.1", 1.5),
@@ -148,7 +148,7 @@ PHASES = [
             ("3.5.4", "Flow test with a generated unknown-layout PDF", "10§6", 1),
         ]),
     ]),
-    ("PH4", "Authentication & audit", "v0.0.5", "M3.1, M3.2", "Every endpoint except `/health` needs header credentials; every action is in a tamper-evident audit log.", [
+    ("PH4", "Authentication & audit", "v0.1.0", "M3.1, M3.2", "Every endpoint except `/health` needs header credentials; every action is in a tamper-evident audit log.", [
         ("T4.1", "Audit service", "06§5, 03§4.16, FR-20", "T3.1", "UPDATE/DELETE on `audit_log` fail; verify OK; 06§6 test vector reproduces", [
             ("4.1.1", "Canonical JSON + SHA-256 chain (genesis = 64 zeros)", "06§5.3, 03§4.16", 1),
             ("4.1.2", "`record()` in the caller's transaction; `record_standalone()` for failures", "06§5.2", 0.75),
@@ -297,6 +297,59 @@ PHASES = [
 ]
 
 
+# --------------------------------------------------------------------------- status (update as work lands)
+
+# Sub-task id -> (status, note). Status: done | partial | todo | dropped. Unlisted sub-tasks are done.
+STATUS_AS_OF = "2026-10-02 (v0.1.0)"
+STATUS: dict[str, tuple[str, str]] = {
+    "0.1.1": ("partial", "pushed to GitHub master; local master merge and branch protection open (owner)"),
+    "0.1.2": ("todo", "owner: import the CSV into the tracker"),
+    "0.1.3": ("partial", "PR template done; CODEOWNERS needs GitHub usernames"),
+    "3.1.1": ("dropped", "no database (ADR-0009): templates, clients and audit are files"),
+    "3.1.2": ("dropped", "no database (ADR-0009)"),
+    "3.1.3": ("dropped", "no database (ADR-0009)"),
+    "3.4.2": ("dropped", "slips are never stored (ADR-0009)"),
+    "3.4.3": ("dropped", "no stored slips to list (ADR-0009)"),
+    "4.1.3": ("done", "append-only JSON-lines file + hash chain instead of SQLite triggers"),
+    "6.1.1": ("dropped", "no database (ADR-0009)"),
+    "6.1.2": ("dropped", "no database (ADR-0009)"),
+    "6.1.3": ("dropped", "no database (ADR-0009)"),
+    "6.2.1": ("dropped", "no stored slips (ADR-0009)"),
+    "6.2.2": ("dropped", "no stored slips (ADR-0009)"),
+    "6.2.3": ("dropped", "no stored slips (ADR-0009)"),
+    "6.3.2": ("partial", "import done; versions visible in GET /templates/{id}; diff endpoint open"),
+    "6.4.1": ("dropped", "no stored deals to export (ADR-0009)"),
+    "6.4.2": ("todo", "audit export endpoint"),
+    "7.2.1": ("partial", "CI builds and runs the image; registry push and deploy open"),
+    "7.2.2": ("todo", "needs hosting decision"),
+    "7.3.1": ("partial", "access log with request id; JSON logging open"),
+    "7.3.2": ("todo", ""),
+    "7.4.1": ("todo", "backup templates/ and data/audit/ (no slip data to back up)"),
+    "7.4.2": ("partial", "verify-audit CLI and /audit/verify done; archive job open"),
+    "7.5.1": ("partial", "CORS and docs toggle done; TLS reverse proxy open"),
+    "8.1.1": ("done", "pulled forward into PH4"),
+    **{sid: ("todo", "") for sid in ("8.2.1", "8.2.2", "8.3.1", "8.4.1", "8.4.2", "8.5.1", "8.6.1", "8.6.2")},
+    **{sid: ("todo", "") for sid in ("9.1.1", "9.2.1", "9.2.2", "9.3.1", "9.4.1", "9.5.1", "9.6.1")},
+    **{sid: ("todo", "") for sid in ("10.1.1", "10.2.1", "10.3.1", "10.3.2", "10.4.1")},
+}
+ICON = {"done": "✅", "partial": "🟡", "todo": "⬜", "dropped": "⛔"}
+WEIGHT = {"done": 1.0, "partial": 0.5, "todo": 0.0}
+
+
+def status_of(sid: str) -> tuple[str, str]:
+    return STATUS.get(sid, ("done", ""))
+
+
+def progress(subs: list[tuple[str, str, str, float]]) -> tuple[float, str]:
+    """Share of effort done, ignoring dropped sub-tasks; and a phase-level status."""
+    live = [(s[3], status_of(s[0])[0]) for s in subs if status_of(s[0])[0] != "dropped"]
+    if not live:
+        return 1.0, "dropped"
+    total = sum(h for h, _ in live)
+    share = sum(h * WEIGHT[st] for h, st in live) / total
+    return share, "done" if share == 1.0 else "todo" if share == 0.0 else "partial"
+
+
 def fmt_h(h: float) -> str:
     return f"{h:g} h" if h < D else f"{round(h / D, 1):g} d"
 
@@ -307,9 +360,8 @@ def main() -> None:
         "# 14 · Task Breakdown (master plan)",
         "",
         "> **Update 2026-10-02 — stateless design ([ADR-0009](adr/0009-stateless-api-no-slip-storage.md)).**",
-        "> Deal slips are never stored and there is no database; tasks below that mention SQLite, PostgreSQL,",
-        "> Alembic, a `slips` table or `/api/v1/slips/*` are replaced by file-based templates, clients and audit",
-        "> (see [`00_design_baseline.md`](00_design_baseline.md)).",
+        "> Deal slips are never stored and there is no database; tasks that needed SQLite, PostgreSQL,",
+        "> Alembic, a `slips` table or `/api/v1/slips/*` are marked ⛔ dropped.",
         "",
         "Every phase, task and sub-task needed to build and ship the system, each linked to the",
         "document section and requirement it implements. Generated by `tools/build_task_plan.py`",
@@ -321,50 +373,63 @@ def main() -> None:
         "`12 P1.1` = task in `12_project_plan.md`. Estimates are ideal hours for one developer coding",
         "by hand (1 d = 8 h).",
         "",
+        f"**Status as of {STATUS_AS_OF}:** ✅ done · 🟡 partly done · ⬜ to do · ⛔ dropped (stateless design).",
+        "Progress is the share of estimated effort done, ignoring dropped sub-tasks.",
+        "",
         "## Summary",
         "",
-        "| Phase | Title | Release | Maps to (doc 12) | Tasks | Sub-tasks | Effort |",
+        "| Phase | Title | Release | Status | Progress | Sub-tasks ✅ / 🟡 / ⬜ / ⛔ | Effort |",
         "|---|---|---|---|---|---|---|",
     ]
     grand = mvp = 0.0
-    for pid, title, rel, maps, _goal, tasks in PHASES:
-        hours = sum(s[3] for t in tasks for s in t[5])
+    for pid, title, rel, _maps, _goal, tasks in PHASES:
+        subs = [s for t in tasks for s in t[5]]
+        hours = sum(s[3] for s in subs)
         grand += hours
         if pid in {"PH0", "PH1", "PH2", "PH3", "PH4", "PH5"}:
             mvp += hours
-        md.append(f"| {pid} | {title} | `{rel}` | {maps} | {len(tasks)} | {sum(len(t[5]) for t in tasks)} | {fmt_h(hours)} |")
+        share, st = progress(subs)
+        counts = [sum(1 for s in subs if status_of(s[0])[0] == k) for k in ("done", "partial", "todo", "dropped")]
+        md.append(f"| {pid} | {title} | `{rel}` | {ICON[st]} | {share:.0%} | {' / '.join(map(str, counts))} "
+                  f"| {fmt_h(hours)} |")
     md += ["", f"**MVP (PH0–PH5): {fmt_h(mvp)}** of development. **All phases: {fmt_h(grand)}** of work "
                "(PH9 includes elapsed activities such as UAT and the parallel run, done mostly by ops and QA).", ""]
     md += ["Order: PH0 → PH1 → PH2 → PH3 → PH4 → PH5 (MVP) → PH6 → PH7 ∥ PH8 → PH9 (go-live) → PH10.", ""]
 
     for pid, title, rel, maps, goal, tasks in PHASES:
-        hours = sum(s[3] for t in tasks for s in t[5])
-        md += ["---", "", f"## {pid} · {title} — `{rel}` · {fmt_h(hours)}", "", f"**Goal:** {goal}  ",
-               f"**Maps to:** `12_project_plan.md` {maps}", ""]
-        rows.append([pid, "", "Phase", title, "", "", f"{hours:g}", "", goal, rel])
+        subs_all = [s for t in tasks for s in t[5]]
+        hours = sum(s[3] for s in subs_all)
+        share, st = progress(subs_all)
+        md += ["---", "", f"## {pid} · {title} — `{rel}` · {fmt_h(hours)} · {ICON[st]} {share:.0%}", "",
+               f"**Goal:** {goal}  ", f"**Maps to:** `12_project_plan.md` {maps}", ""]
+        rows.append([pid, "", "Phase", title, "", "", f"{hours:g}", "", goal, rel, st, f"{share:.0%}"])
         for tid, ttitle, trefs, deps, done, subs in tasks:
             th = sum(s[3] for s in subs)
-            md += [f"### {tid} · {ttitle} ({fmt_h(th)})", "",
+            tshare, tst = progress(subs)
+            md += [f"### {tid} · {ttitle} ({fmt_h(th)}) {ICON[tst]}", "",
                    f"Refs: {trefs} · Depends on: {deps} · **Done when:** {done}", "",
-                   "| ID | Sub-task | Refs | Est. | Done |", "|---|---|---|---|---|"]
-            rows.append([tid, pid, "Task", ttitle, trefs, deps, f"{th:g}", "", done, rel])
+                   "| ID | Sub-task | Refs | Est. | Status |", "|---|---|---|---|---|"]
+            rows.append([tid, pid, "Task", ttitle, trefs, deps, f"{th:g}", "", done, rel, tst, f"{tshare:.0%}"])
             for sid, stitle, srefs, sh in subs:
-                md.append(f"| {sid} | {stitle} | {srefs} | {fmt_h(sh)} | [ ] |")
-                rows.append([sid, tid, "Sub-task", stitle.replace("`", ""), srefs, "", f"{sh:g}", "", "", rel])
+                sst, note = status_of(sid)
+                md.append(f"| {sid} | {stitle} | {srefs} | {fmt_h(sh)} | {ICON[sst]}{' ' + note if note else ''} |")
+                rows.append([sid, tid, "Sub-task", stitle.replace("`", ""), srefs, "", f"{sh:g}", "", note, rel, sst, ""])
             md.append("")
 
     md += ["---", "", "## How to use this plan", "",
            "1. Import `docs/task_breakdown.csv` into your tracker (one issue per row; `Parent` gives the hierarchy).",
            "2. Work phase by phase; inside a phase follow the task dependencies.",
-           "3. Tick a sub-task only when its tests pass; close a task only when its **Done when** holds and the",
-           "   Definition of Done in `12_project_plan.md` §7 is met.",
+           "3. Mark a sub-task done only when its tests pass; close a task only when its **Done when** holds and",
+           "   the Definition of Done in `12_project_plan.md` §7 is met.",
            "4. End each phase with its release tag and an iteration review (`13_development_plan.md` §9).",
-           "5. To change the plan, edit `tools/build_task_plan.py` and run it again.", ""]
+           "5. To change the plan or a status, edit `tools/build_task_plan.py` (`PHASES`, `STATUS`) and run it again.",
+           ""]
 
     MD_OUT.write_text("\n".join(md), encoding="utf-8")
     with CSV_OUT.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["ID", "Parent", "Type", "Title", "Refs", "Depends on", "Estimate (h)", "Owner", "Done when", "Release"])
+        w.writerow(["ID", "Parent", "Type", "Title", "Refs", "Depends on", "Estimate (h)", "Owner", "Done when / note",
+                    "Release", "Status", "Progress"])
         w.writerows(rows)
     print(f"wrote {MD_OUT.relative_to(ROOT)} and {CSV_OUT.relative_to(ROOT)}: "
           f"{len(rows)} rows, MVP {fmt_h(mvp)}, total {fmt_h(grand)}")

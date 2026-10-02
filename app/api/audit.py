@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 
 from app.api.deps import Client, audit_log
 from app.engine.fields import BASE_REQUIRED, FIELD_SPECS, REQUIRED_BY_TYPE, is_valid_field_path
 from app.engine.profiles import available_profiles
+from app.export.xsd import build_xsd
 from app.schemas.audit import AuditEventOut, AuditPage, AuditVerifyOut, FieldDef, MarketProfileOut
 from app.services.audit_service import AuditLog
 
@@ -84,3 +85,18 @@ def get_markets(ctx: Client) -> list[MarketProfileOut]:
         MarketProfileOut(code=p.code, locale=p.locale, currency=p.currency, date_order=p.date_order)
         for p in available_profiles()
     ]
+
+
+@schema_router.get(
+    "/xsd",
+    summary="XML Schema (XSD) of the XML output",
+    response_class=Response,
+    responses={200: {"content": {"application/xml": {}}, "description": "parse_result.xsd"}},
+)
+def get_xsd(ctx: Client) -> Response:
+    """The XSD that every `/api/v1/parse?format=xml` response validates against (schema_version 1)."""
+    return Response(
+        content=build_xsd(),
+        media_type="application/xml",
+        headers={"Content-Disposition": 'attachment; filename="parse_result.xsd"'},
+    )

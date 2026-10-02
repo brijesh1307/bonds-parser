@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictBool
 
 from app.engine.fields import Market, Method, Severity, SlipStatus, Source
 from app.schemas.deal import Deal
@@ -23,7 +23,9 @@ class KeyValue(BaseModel):
 
 
 class FieldInfo(BaseModel):
-    value: str | int | float | date | None = Field(description="Normalised value; decimals as strings")
+    value: StrictBool | str | int | float | date | None = Field(
+        description="Normalised value; decimals as strings", union_mode="left_to_right"
+    )
     raw: str | None
     method: Method
     confidence: float

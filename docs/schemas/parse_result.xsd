@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Bonds Deal Slip Parser: XML output of /api/v1/parse?format=xml (schema_version 1).
+     Generated from the response models by app/export/xsd.py - do not edit by hand. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="unqualified">
+  <xs:simpleType name="Empty">
+    <xs:restriction base="xs:string">
+      <xs:length value="0" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="SlipStatus">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="PARSED" />
+      <xs:enumeration value="NEEDS_REVIEW" />
+      <xs:enumeration value="NEW_TEMPLATE" />
+      <xs:enumeration value="APPROVED" />
+      <xs:enumeration value="UNREADABLE" />
+      <xs:enumeration value="FAILED" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="List_decimal">
+    <xs:sequence>
+      <xs:element name="item" type="xs:decimal" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="List_List_decimal">
+    <xs:sequence>
+      <xs:element name="item" type="List_decimal" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="SourceInfo">
+    <xs:sequence>
+      <xs:element name="file" type="xs:string" />
+      <xs:element name="pages" type="xs:integer" />
+      <xs:element name="page_sizes" type="List_List_decimal" />
+      <xs:element name="sha256" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="Market">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="IN" />
+      <xs:enumeration value="US" />
+      <xs:enumeration value="GB" />
+      <xs:enumeration value="DE" />
+      <xs:enumeration value="JP" />
+      <xs:enumeration value="INTL" />
+      <xs:enumeration value="UNKNOWN" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="U_string">
+    <xs:union memberTypes="xs:string Empty" />
+  </xs:simpleType>
+  <xs:complexType name="N_string">
+    <xs:simpleContent>
+      <xs:extension base="U_string">
+        <xs:attribute name="null" type="xs:boolean" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="MarketSignalOut">
+    <xs:sequence>
+      <xs:element name="signal" type="xs:string" />
+      <xs:element name="value" type="xs:string" />
+      <xs:element name="market" type="Market" />
+      <xs:element name="weight" type="xs:integer" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="List_MarketSignalOut">
+    <xs:sequence>
+      <xs:element name="item" type="MarketSignalOut" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="MarketInfo">
+    <xs:sequence>
+      <xs:element name="market" type="Market" />
+      <xs:element name="issuer_country" type="N_string" />
+      <xs:element name="slip_locale" type="N_string" />
+      <xs:element name="market_confidence" type="xs:decimal" />
+      <xs:element name="profile_available" type="xs:boolean" />
+      <xs:element name="signals" type="List_MarketSignalOut" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="U_integer">
+    <xs:union memberTypes="xs:integer Empty" />
+  </xs:simpleType>
+  <xs:complexType name="N_integer">
+    <xs:simpleContent>
+      <xs:extension base="U_integer">
+        <xs:attribute name="null" type="xs:boolean" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="TemplateMatch">
+    <xs:sequence>
+      <xs:element name="template_id" type="N_string" />
+      <xs:element name="name" type="N_string" />
+      <xs:element name="version" type="N_integer" />
+      <xs:element name="score" type="xs:decimal" />
+      <xs:element name="threshold" type="xs:decimal" />
+      <xs:element name="matched" type="xs:boolean" />
+      <xs:element name="is_draft" type="xs:boolean" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="DealType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="OUTRIGHT" />
+      <xs:enumeration value="PRIMARY_AUCTION" />
+      <xs:enumeration value="PRIMARY_PLACEMENT" />
+      <xs:enumeration value="REPO" />
+      <xs:enumeration value="REVERSE_REPO" />
+      <xs:enumeration value="TREPS_BORROW" />
+      <xs:enumeration value="TREPS_LEND" />
+      <xs:enumeration value="LAF" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="U_DealType">
+    <xs:union memberTypes="DealType Empty" />
+  </xs:simpleType>
+  <xs:complexType name="N_DealType">
+    <xs:simpleContent>
+      <xs:extension base="U_DealType">
+        <xs:attribute name="null" type="xs:boolean" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:simpleType name="InstrumentType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="GSEC" />
+      <xs:enumeration value="SDL" />
+      <xs:enumeration value="TBILL" />
+      <xs:enumeration value="CMB" />
+      <xs:enumeration value="CORPORATE_BOND" />
+      <xs:enumeration value="PSU_BOND" />
+      <xs:enumeration value="CP" />
+      <xs:enumeration value="CD" />
+      <xs:enumeration value="UST" />
+      <xs:enumeration value="GILT" />
+      <xs:enumeration value="BUND" />
+      <xs:enumeration value="JGB" />
+      <xs:enumeration value="EUROBOND" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="U_InstrumentType">
+    <xs:union memberTypes="InstrumentType Empty" />
+  </xs:simpleType>
+  <xs:complexType name="N_InstrumentType">
+    <xs:simpleContent>
+      <xs:extension base="U_InstrumentType">
+        <xs:attribute name="null" type="xs:boolean" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:simpleType name="BuySell">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="BUY" />
+      <xs:enumeration value="SELL" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="U_BuySell">
+    <xs:union memberTypes="BuySell Empty" />
+  </xs:simpleType>
+  <xs:complexType name="N_BuySell">
+    <xs:simpleContent>
+      <xs:extension base="U_BuySell">
+        <xs:attribute name="null" type="xs:boolean" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:simpleType name="U_date">
+    <xs:union memberTypes="xs:date Empty" />
+  </xs:simpleType>
+  <xs:complexType name="N_date">
+    <xs:simpleContent>
+      <xs:extension base="U_date">
+        <xs:attribute name="null" type="xs:boolean" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="Identifiers">
+    <xs:sequence>
+      <xs:element name="isin" type="N_string" />
+      <xs:element name="cusip" type="N_string" />
+      <xs:element name="sedol" type="N_string" />
+      <xs:element name="common_code" type="N_string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="U_decimal">
+    <xs:union memberTypes="xs:decimal Empty" />
+  </xs:simpleType>
+  <xs:complexType name="N_decimal">
+    <xs:simpleContent>
+      <xs:extension base="U_decimal">
+        <xs:attribute name="null" type="xs:boolean" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:simpleType name="DayCount">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="30/360" />
+      <xs:enumeration value="30E/360" />
+      <xs:enumeration value="ACT/ACT" />
+      <xs:enumeration value="ACT/365" />
+      <xs:enumeration value="ACT/364" />
+      <xs:enumeration value="ACT/360" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="U_DayCount">
+    <xs:union memberTypes="DayCount Empty" />
+  </xs:simpleType>
+  <xs:complexType name="N_DayCount">
+    <xs:simpleContent>
+      <xs:extension base="U_DayCount">
+        <xs:attribute name="null" type="xs:boolean" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:simpleType name="U_boolean">
+    <xs:union memberTypes="xs:boolean Empty" />
+  </xs:simpleType>
+  <xs:complexType name="N_boolean">
+    <xs:simpleContent>
+      <xs:extension base="U_boolean">
+        <xs:attribute name="null" type="xs:boolean" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:simpleType name="BidType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="COMPETITIVE" />
+      <xs:enumeration value="NON_COMPETITIVE" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="U_BidType">
+    <xs:union memberTypes="BidType Empty" />
+  </xs:simpleType>
+  <xs:complexType name="N_BidType">
+    <xs:simpleContent>
+      <xs:extension base="U_BidType">
+        <xs:attribute name="null" type="xs:boolean" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:simpleType name="U_Market">
+    <xs:union memberTypes="Market Empty" />
+  </xs:simpleType>
+  <xs:complexType name="N_Market">
+    <xs:simpleContent>
+      <xs:extension base="U_Market">
+        <xs:attribute name="null" type="xs:boolean" use="optional" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="N_Repo">
+    <xs:sequence minOccurs="0">
+      <xs:element name="repo_rate" type="N_decimal" />
+      <xs:element name="repo_days" type="N_integer" />
+      <xs:element name="day_count" type="N_DayCount" />
+      <xs:element name="haircut" type="N_decimal" />
+      <xs:element name="leg1_date" type="N_date" />
+      <xs:element name="leg1_price" type="N_decimal" />
+      <xs:element name="leg1_accrued_days" type="N_integer" />
+      <xs:element name="leg1_accrued_interest" type="N_decimal" />
+      <xs:element name="leg1_amount" type="N_decimal" />
+      <xs:element name="leg2_date" type="N_date" />
+      <xs:element name="leg2_price" type="N_decimal" />
+      <xs:element name="leg2_accrued_days" type="N_integer" />
+      <xs:element name="leg2_accrued_interest" type="N_decimal" />
+      <xs:element name="leg2_amount" type="N_decimal" />
+      <xs:element name="repo_interest" type="N_decimal" />
+    </xs:sequence>
+    <xs:attribute name="null" type="xs:boolean" use="optional" />
+  </xs:complexType>
+  <xs:complexType name="Deal">
+    <xs:sequence>
+      <xs:element name="deal_id" type="N_string" />
+      <xs:element name="deal_type" type="N_DealType" />
+      <xs:element name="instrument_type" type="N_InstrumentType" />
+      <xs:element name="buy_sell" type="N_BuySell" />
+      <xs:element name="platform" type="N_string" />
+      <xs:element name="trade_date" type="N_date" />
+      <xs:element name="settlement_date" type="N_date" />
+      <xs:element name="security_name" type="N_string" />
+      <xs:element name="issuer" type="N_string" />
+      <xs:element name="credit_rating" type="N_string" />
+      <xs:element name="isin" type="N_string" />
+      <xs:element name="identifiers" type="Identifiers" />
+      <xs:element name="coupon_rate" type="N_decimal" />
+      <xs:element name="coupon_frequency" type="N_integer" />
+      <xs:element name="maturity_date" type="N_date" />
+      <xs:element name="last_coupon_date" type="N_date" />
+      <xs:element name="day_count" type="N_DayCount" />
+      <xs:element name="tenor_days" type="N_integer" />
+      <xs:element name="face_value" type="N_decimal" />
+      <xs:element name="face_value_per_unit" type="N_decimal" />
+      <xs:element name="quantity" type="N_integer" />
+      <xs:element name="price" type="N_decimal" />
+      <xs:element name="yield" type="N_decimal" />
+      <xs:element name="principal_amount" type="N_decimal" />
+      <xs:element name="accrued_days" type="N_integer" />
+      <xs:element name="accrued_interest" type="N_decimal" />
+      <xs:element name="discount_amount" type="N_decimal" />
+      <xs:element name="consideration" type="N_decimal" />
+      <xs:element name="stamp_duty" type="N_decimal" />
+      <xs:element name="settlement_reference" type="N_string" />
+      <xs:element name="currency" type="N_string" />
+      <xs:element name="settlement_currency" type="N_string" />
+      <xs:element name="fx_rate" type="N_decimal" />
+      <xs:element name="counterparty" type="N_string" />
+      <xs:element name="counterparty_pan" type="N_string" />
+      <xs:element name="is_market_linked" type="N_boolean" />
+      <xs:element name="broker" type="N_string" />
+      <xs:element name="settlement_mode" type="N_string" />
+      <xs:element name="portfolio" type="N_string" />
+      <xs:element name="dealer" type="N_string" />
+      <xs:element name="bid_type" type="N_BidType" />
+      <xs:element name="bid_amount" type="N_decimal" />
+      <xs:element name="issuer_country" type="N_string" />
+      <xs:element name="market" type="N_Market" />
+      <xs:element name="slip_locale" type="N_string" />
+      <xs:element name="market_confidence" type="N_decimal" />
+      <xs:element name="repo" type="N_Repo" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="Method">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="template" />
+      <xs:enumeration value="region" />
+      <xs:enumeration value="constant" />
+      <xs:enumeration value="regex" />
+      <xs:enumeration value="synonym" />
+      <xs:enumeration value="abbreviation" />
+      <xs:enumeration value="derived" />
+      <xs:enumeration value="fuzzy" />
+      <xs:enumeration value="text" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="N_List_decimal">
+    <xs:sequence minOccurs="0">
+      <xs:element name="item" type="xs:decimal" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="null" type="xs:boolean" use="optional" />
+  </xs:complexType>
+  <xs:complexType name="FieldInfo">
+    <xs:sequence>
+      <xs:element name="value" type="N_string" />
+      <xs:element name="raw" type="N_string" />
+      <xs:element name="method" type="Method" />
+      <xs:element name="confidence" type="xs:decimal" />
+      <xs:element name="label" type="N_string" />
+      <xs:element name="page" type="N_integer" />
+      <xs:element name="bbox" type="N_List_decimal" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="FieldsMap">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="deal_id" type="FieldInfo" minOccurs="0" />
+      <xs:element name="deal_type" type="FieldInfo" minOccurs="0" />
+      <xs:element name="instrument_type" type="FieldInfo" minOccurs="0" />
+      <xs:element name="buy_sell" type="FieldInfo" minOccurs="0" />
+      <xs:element name="platform" type="FieldInfo" minOccurs="0" />
+      <xs:element name="trade_date" type="FieldInfo" minOccurs="0" />
+      <xs:element name="settlement_date" type="FieldInfo" minOccurs="0" />
+      <xs:element name="security_name" type="FieldInfo" minOccurs="0" />
+      <xs:element name="issuer" type="FieldInfo" minOccurs="0" />
+      <xs:element name="credit_rating" type="FieldInfo" minOccurs="0" />
+      <xs:element name="isin" type="FieldInfo" minOccurs="0" />
+      <xs:element name="coupon_rate" type="FieldInfo" minOccurs="0" />
+      <xs:element name="coupon_frequency" type="FieldInfo" minOccurs="0" />
+      <xs:element name="maturity_date" type="FieldInfo" minOccurs="0" />
+      <xs:element name="last_coupon_date" type="FieldInfo" minOccurs="0" />
+      <xs:element name="day_count" type="FieldInfo" minOccurs="0" />
+      <xs:element name="tenor_days" type="FieldInfo" minOccurs="0" />
+      <xs:element name="face_value" type="FieldInfo" minOccurs="0" />
+      <xs:element name="face_value_per_unit" type="FieldInfo" minOccurs="0" />
+      <xs:element name="quantity" type="FieldInfo" minOccurs="0" />
+      <xs:element name="price" type="FieldInfo" minOccurs="0" />
+      <xs:element name="yield" type="FieldInfo" minOccurs="0" />
+      <xs:element name="principal_amount" type="FieldInfo" minOccurs="0" />
+      <xs:element name="accrued_days" type="FieldInfo" minOccurs="0" />
+      <xs:element name="accrued_interest" type="FieldInfo" minOccurs="0" />
+      <xs:element name="discount_amount" type="FieldInfo" minOccurs="0" />
+      <xs:element name="consideration" type="FieldInfo" minOccurs="0" />
+      <xs:element name="stamp_duty" type="FieldInfo" minOccurs="0" />
+      <xs:element name="settlement_reference" type="FieldInfo" minOccurs="0" />
+      <xs:element name="currency" type="FieldInfo" minOccurs="0" />
+      <xs:element name="settlement_currency" type="FieldInfo" minOccurs="0" />
+      <xs:element name="fx_rate" type="FieldInfo" minOccurs="0" />
+      <xs:element name="counterparty" type="FieldInfo" minOccurs="0" />
+      <xs:element name="counterparty_pan" type="FieldInfo" minOccurs="0" />
+      <xs:element name="is_market_linked" type="FieldInfo" minOccurs="0" />
+      <xs:element name="broker" type="FieldInfo" minOccurs="0" />
+      <xs:element name="settlement_mode" type="FieldInfo" minOccurs="0" />
+      <xs:element name="portfolio" type="FieldInfo" minOccurs="0" />
+      <xs:element name="dealer" type="FieldInfo" minOccurs="0" />
+      <xs:element name="bid_type" type="FieldInfo" minOccurs="0" />
+      <xs:element name="bid_amount" type="FieldInfo" minOccurs="0" />
+      <xs:element name="issuer_country" type="FieldInfo" minOccurs="0" />
+      <xs:element name="market" type="FieldInfo" minOccurs="0" />
+      <xs:element name="slip_locale" type="FieldInfo" minOccurs="0" />
+      <xs:element name="market_confidence" type="FieldInfo" minOccurs="0" />
+      <xs:element name="identifiers.isin" type="FieldInfo" minOccurs="0" />
+      <xs:element name="identifiers.cusip" type="FieldInfo" minOccurs="0" />
+      <xs:element name="identifiers.sedol" type="FieldInfo" minOccurs="0" />
+      <xs:element name="identifiers.common_code" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.repo_rate" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.repo_days" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.day_count" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.haircut" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.leg1_date" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.leg1_price" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.leg1_accrued_days" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.leg1_accrued_interest" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.leg1_amount" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.leg2_date" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.leg2_price" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.leg2_accrued_days" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.leg2_accrued_interest" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.leg2_amount" type="FieldInfo" minOccurs="0" />
+      <xs:element name="repo.repo_interest" type="FieldInfo" minOccurs="0" />
+    </xs:choice>
+  </xs:complexType>
+  <xs:simpleType name="Source">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="table" />
+      <xs:enumeration value="grid" />
+      <xs:enumeration value="text" />
+      <xs:enumeration value="prose" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="KeyValue">
+    <xs:sequence>
+      <xs:element name="key" type="xs:string" />
+      <xs:element name="value" type="xs:string" />
+      <xs:element name="source" type="Source" />
+      <xs:element name="page" type="xs:integer" />
+      <xs:element name="key_bbox" type="N_List_decimal" />
+      <xs:element name="value_bbox" type="N_List_decimal" />
+      <xs:element name="mapped_to" type="N_string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="List_KeyValue">
+    <xs:sequence>
+      <xs:element name="item" type="KeyValue" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="List_string">
+    <xs:sequence>
+      <xs:element name="item" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="Severity">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ERROR" />
+      <xs:enumeration value="WARNING" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="ValidationIssue">
+    <xs:sequence>
+      <xs:element name="code" type="xs:string" />
+      <xs:element name="severity" type="Severity" />
+      <xs:element name="message" type="xs:string" />
+      <xs:element name="fields" type="List_string" />
+      <xs:element name="expected" type="N_string" />
+      <xs:element name="actual" type="N_string" />
+      <xs:element name="tolerance" type="N_string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="List_ValidationIssue">
+    <xs:sequence>
+      <xs:element name="item" type="ValidationIssue" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ParseResultDocument">
+    <xs:sequence>
+      <xs:element name="status" type="SlipStatus" />
+      <xs:element name="source" type="SourceInfo" />
+      <xs:element name="market" type="MarketInfo" />
+      <xs:element name="template" type="TemplateMatch" />
+      <xs:element name="deal" type="Deal" />
+      <xs:element name="fields" type="FieldsMap" />
+      <xs:element name="key_values" type="List_KeyValue" />
+      <xs:element name="missing_required" type="List_string" />
+      <xs:element name="validation" type="List_ValidationIssue" />
+      <xs:element name="low_confidence" type="List_string" />
+      <xs:element name="unmapped" type="List_KeyValue" />
+    </xs:sequence>
+    <xs:attribute name="schema_version" type="xs:string" fixed="1" use="required" />
+  </xs:complexType>
+  <xs:element name="parse_result" type="ParseResultDocument" />
+</xs:schema>
