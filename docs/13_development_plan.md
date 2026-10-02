@@ -1,5 +1,11 @@
 # 13 · Development Plan
 
+> **Update 2026-10-02 — stateless design ([ADR-0009](adr/0009-stateless-api-no-slip-storage.md)).**
+> Deal slips are never stored and there is no database. Wherever this document describes a `slips`
+> table, `/api/v1/slips/*` endpoints, SQLite / PostgreSQL, uploads storage or slip statuses such as
+> `APPROVED`, [`00_design_baseline.md`](00_design_baseline.md) is authoritative: templates, clients and
+> the audit log are files, and preview / approve take the PDF + mapping in one request.
+
 How the system is **built**: environments, tooling, branching, coding standards, the build order
 (iterations), testing and CI/CD gates, reviews and release. *What* is built and *when* is in
 `12_project_plan.md`; names and values come from `00_design_baseline.md` (B§).

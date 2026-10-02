@@ -1,5 +1,11 @@
 # 03 · Low-Level Design (LLD)
 
+> **Update 2026-10-02 — stateless design ([ADR-0009](adr/0009-stateless-api-no-slip-storage.md)).**
+> Deal slips are never stored and there is no database. Wherever this document describes a `slips`
+> table, `/api/v1/slips/*` endpoints, SQLite / PostgreSQL, uploads storage or slip statuses such as
+> `APPROVED`, [`00_design_baseline.md`](00_design_baseline.md) is authoritative: templates, clients and
+> the audit log are files, and preview / approve take the PDF + mapping in one request.
+
 Scope: module-by-module design of the Bonds Deal Slip Parser, the engine algorithms, the slip state
 machine, sequence flows, the physical database design, error handling and runtime concerns.
 

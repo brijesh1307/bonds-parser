@@ -1,6 +1,6 @@
 # ADR-0004: SQLAlchemy with SQLite for MVP, PostgreSQL in production
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0009](0009-stateless-api-no-slip-storage.md) (2026-10-02)
 
 ## Context
 

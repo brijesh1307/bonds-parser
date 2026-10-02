@@ -1,5 +1,11 @@
 # 04 · API Specification
 
+> **Update 2026-10-02 — stateless design ([ADR-0009](adr/0009-stateless-api-no-slip-storage.md)).**
+> Deal slips are never stored and there is no database. Wherever this document describes a `slips`
+> table, `/api/v1/slips/*` endpoints, SQLite / PostgreSQL, uploads storage or slip statuses such as
+> `APPROVED`, [`00_design_baseline.md`](00_design_baseline.md) is authoritative: templates, clients and
+> the audit log are files, and preview / approve take the PDF + mapping in one request.
+
 Source of truth: [`00_design_baseline.md`](00_design_baseline.md) (§2 decisions, §3 statuses, §6 audit
 actions, §7 endpoints, §9 env vars). If this document disagrees with the baseline, the baseline wins.
 Anything not stated in the baseline is marked **(assumption)**.

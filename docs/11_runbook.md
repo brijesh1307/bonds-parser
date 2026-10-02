@@ -1,5 +1,11 @@
 # 11 · Runbook: Setup, Usage and Operations
 
+> **Update 2026-10-02 — stateless design ([ADR-0009](adr/0009-stateless-api-no-slip-storage.md)).**
+> Deal slips are never stored and there is no database. Wherever this document describes a `slips`
+> table, `/api/v1/slips/*` endpoints, SQLite / PostgreSQL, uploads storage or slip statuses such as
+> `APPROVED`, [`00_design_baseline.md`](00_design_baseline.md) is authoritative: templates, clients and
+> the audit log are files, and preview / approve take the PDF + mapping in one request.
+
 For developers running the Bonds Deal Slip Parser locally and for the people operating it.
 Names, env vars and endpoints follow `docs/00_design_baseline.md`.
 

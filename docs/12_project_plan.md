@@ -1,5 +1,11 @@
 # 12 · Project Plan
 
+> **Update 2026-10-02 — stateless design ([ADR-0009](adr/0009-stateless-api-no-slip-storage.md)).**
+> Deal slips are never stored and there is no database. Wherever this document describes a `slips`
+> table, `/api/v1/slips/*` endpoints, SQLite / PostgreSQL, uploads storage or slip statuses such as
+> `APPROVED`, [`00_design_baseline.md`](00_design_baseline.md) is authoritative: templates, clients and
+> the audit log are files, and preview / approve take the PDF + mapping in one request.
+
 Scope, names and the MVP/after-MVP split come from `docs/00_design_baseline.md` (B§11).
 Requirement IDs (FR-, NFR-) and risk IDs (R-) refer to `docs/01_requirements.md`.
 Owners are role placeholders; estimates are in ideal engineer-hours (h) or days (d).
