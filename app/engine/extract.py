@@ -21,7 +21,7 @@ from pdfminer.pdfdocument import PDFEncryptionError, PDFPasswordIncorrect
 from pdfplumber.utils.exceptions import PdfminerException
 
 from app.engine.fields import Source
-from app.engine.models import BBox, ExtractedDocument, KeyValue
+from app.engine.models import BBox, ExtractedDocument, KeyValue, Word
 from app.engine.normalize import ISIN_RE, isin_check_digit_ok
 from app.errors import EncryptedPdfError, InvalidPdfError, TooManyPagesError
 
@@ -312,6 +312,7 @@ def extract(pdf: Path | bytes, *, max_pages: int) -> ExtractedDocument:
         texts: list[str] = []
         sizes: list[tuple[float, float]] = []
         table_boxes: list[list[BBox]] = []
+        page_words: list[list[Word]] = []
         try:
             for page_no, page in enumerate(doc.pages, start=1):
                 sizes.append((round(float(page.width), 1), round(float(page.height), 1)))
@@ -322,6 +323,13 @@ def extract(pdf: Path | bytes, *, max_pages: int) -> ExtractedDocument:
                     pairs.extend(_table_pairs(t, page_no))
                 pairs.extend(_text_pairs(page, page_no, boxes))
                 texts.append(page.extract_text() or "")
+                page_words.append(
+                    [
+                        (w["text"], b)
+                        for w in page.extract_words(x_tolerance=1.5, y_tolerance=2)
+                        if (b := _bbox((w["x0"], w["top"], w["x1"], w["bottom"])))
+                    ]
+                )
         except Exception as exc:
             raise InvalidPdfError("PDF content cannot be read") from exc
 
@@ -335,5 +343,6 @@ def extract(pdf: Path | bytes, *, max_pages: int) -> ExtractedDocument:
         pages=len(sizes),
         page_sizes=sizes,
         table_bboxes=table_boxes,
+        words=page_words,
         has_text_layer=has_text,
     )

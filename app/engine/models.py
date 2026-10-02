@@ -14,6 +14,7 @@ from typing import Any, Literal
 from app.engine.fields import Method, Severity, SlipStatus, Source
 
 BBox = tuple[float, float, float, float]
+Word = tuple[str, BBox]  # text, position
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +37,7 @@ class ExtractedDocument:
     page_sizes: list[tuple[float, float]]
     table_bboxes: list[list[BBox]]  # per page
     has_text_layer: bool
+    words: list[list[Word]] = field(default_factory=list)  # per page, for template region rules
 
 
 @dataclass(slots=True)
@@ -94,6 +96,54 @@ class TemplateDefinition:
     accepted_derived: frozenset[str] = frozenset()
     date_order: Literal["DMY", "MDY"] | None = None
     name: str | None = None
+
+    @classmethod
+    def from_json(cls, d: Mapping[str, Any], *, name: str | None = None) -> TemplateDefinition:
+        """Baseline §6 JSON shape -> definition."""
+        fp = d.get("fingerprint") or {}
+        return cls(
+            template_id=d["template_id"],
+            version=int(d["version"]),
+            market=d.get("market") or "UNKNOWN",
+            fingerprint_labels=frozenset(fp.get("labels") or ()),
+            keywords=tuple(fp.get("keywords") or ()),
+            match_threshold=float(d.get("match_threshold") or 0.80),
+            label_map=dict(d.get("label_map") or {}),
+            region_rules=tuple(
+                RegionRule(r["field"], int(r["page"]), tuple(float(x) for x in r["bbox"]))  # type: ignore[arg-type]
+                for r in d.get("region_rules") or ()
+            ),
+            regex_rules=tuple(
+                RegexRule(r["field"], r["pattern"], int(r.get("group", 1)))
+                for r in d.get("regex_rules") or ()
+            ),
+            constants=dict(d.get("constants") or {}),
+            ignore=frozenset(d.get("ignore") or ()),
+            accepted_derived=frozenset(d.get("accepted_derived") or ()),
+            date_order=d.get("date_order"),
+            name=name,
+        )
+
+    def to_json(self) -> dict[str, Any]:
+        """Definition -> baseline §6 JSON shape (sorted, so files diff cleanly)."""
+        return {
+            "template_id": self.template_id,
+            "version": self.version,
+            "market": self.market,
+            "fingerprint": {"labels": sorted(self.fingerprint_labels), "keywords": list(self.keywords)},
+            "match_threshold": self.match_threshold,
+            "label_map": dict(sorted(self.label_map.items())),
+            "region_rules": [
+                {"field": r.field, "page": r.page, "bbox": list(r.bbox)} for r in self.region_rules
+            ],
+            "regex_rules": [
+                {"field": r.field, "pattern": r.pattern, "group": r.group} for r in self.regex_rules
+            ],
+            "constants": dict(sorted(self.constants.items())),
+            "ignore": sorted(self.ignore),
+            "accepted_derived": sorted(self.accepted_derived),
+            "date_order": self.date_order,
+        }
 
 
 @dataclass(frozen=True, slots=True)

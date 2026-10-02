@@ -31,8 +31,7 @@ class Problem(BaseModel):
 
 class HealthOut(BaseModel):
     status: Literal["ok", "degraded"]
-    db: Literal["ok", "error", "not_configured"] = Field(
-        description="Database check. `not_configured` until the database layer lands (PH3)."
-    )
+    templates: Literal["ok", "error"] = Field(description="Template folder writable")
+    audit: Literal["ok", "error"] = Field(description="Audit log writable")
     version: str
     time: datetime

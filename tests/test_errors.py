@@ -20,7 +20,7 @@ from app import errors as e
         (e.TooManyPagesError, 422, "too-many-pages"),
         (e.EncryptedPdfError, 422, "encrypted-pdf"),
         (e.InvalidPdfError, 422, "invalid-pdf"),
-        (e.MappingValidationError, 422, "invalid-mapping"),
+        (e.MappingValidationError, 400, "invalid-mapping"),
         (e.ApprovalBlockedError, 422, "approval-blocked"),
     ],
 )

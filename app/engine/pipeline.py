@@ -2,29 +2,33 @@
 
 extract -> detect market -> map labels -> normalise (market profile) -> per-unit face value
 -> resolve -> derive -> build deal -> validate -> required / confidence -> status.
-Templates (PH3) plug in at the matching and mapping steps.
+A matched (or draft) template adds its label map, rules, market / date-order pins and
+accepted derived fields.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
 from app.config import EngineSettings
 from app.engine.derive import derive, reassign_per_unit_face_value
+from app.engine.detect import fingerprint, jaccard, match_template
 from app.engine.extract import extract
 from app.engine.fields import (
+    ACCEPTED_DERIVED_SCORE,
     FIELD_SPECS,
     REPO_DEAL_TYPES,
     REPO_FIELDS,
     TOP_LEVEL_FIELDS,
     Market,
+    Method,
     Severity,
     SlipStatus,
     empty_deal,
 )
-from app.engine.mapping import collect_candidates, resolve
+from app.engine.mapping import apply_rules, collect_candidates, resolve
 from app.engine.market import detect_market
 from app.engine.models import (
     EngineResult,
@@ -36,6 +40,7 @@ from app.engine.models import (
     TemplateMatchResult,
 )
 from app.engine.normalize import DocHints, NormalizationError, normalize_value
+from app.engine.profiles import get_profile
 from app.engine.validate import low_confidence, missing_required, validate
 
 
@@ -102,6 +107,20 @@ def _market_issues(market: MarketDetection) -> list[Issue]:
     return []
 
 
+DraftBuilder = Callable[[ExtractedDocument, MarketDetection], TemplateDefinition]
+
+
+def _pin_market(market: MarketDetection, template: TemplateDefinition) -> MarketDetection:
+    """A template may pin the market of its layout when the vote is inconclusive."""
+    if market.market != Market.UNKNOWN or template.market in ("", Market.UNKNOWN):
+        return market
+    profile = get_profile(template.market)
+    return MarketDetection(
+        template.market, market.issuer_country, profile.locale if profile else None, market.market_confidence,
+        market.signals, profile,
+    )  # fmt: skip
+
+
 def run(
     pdf: Path | bytes,
     *,
@@ -109,23 +128,42 @@ def run(
     sha256: str,
     es: EngineSettings,
     templates: Sequence[TemplateDefinition] = (),
+    draft: DraftBuilder | None = None,
 ) -> EngineResult:
+    """Parse one PDF. `draft` builds a draft template from the extracted slip (preview / approve)."""
     doc = extract(pdf, max_pages=es.max_pages)
-    match = TemplateMatchResult(None, 0.0, es.template_match_threshold, matched=False)  # templates: PH3
 
     if not doc.has_text_layer:
         unknown = MarketDetection(Market.UNKNOWN, None, None, 0.0, [], None)
+        nomatch = TemplateMatchResult(None, 0.0, es.template_match_threshold, matched=False)
         return EngineResult(
-            SlipStatus.UNREADABLE, file_name, doc.pages, doc.page_sizes, sha256, unknown, match,
+            SlipStatus.UNREADABLE, file_name, doc.pages, doc.page_sizes, sha256, unknown, nomatch,
             build_deal({}, unknown), {}, [], {}, [], [], [], [],
         )  # fmt: skip
 
     market = detect_market(doc)
+    if draft is not None:
+        tpl: TemplateDefinition | None = draft(doc, market)
+        assert tpl is not None  # noqa: S101 - the builder always returns a definition
+        match = TemplateMatchResult(
+            tpl,
+            jaccard(fingerprint(doc), tpl.fingerprint_labels),
+            tpl.match_threshold,
+            matched=True,
+            is_draft=True,
+        )
+    else:
+        match = match_template(doc, templates, es.template_match_threshold)
+        tpl = match.template if match.matched else None
+    if tpl is not None:
+        market = _pin_market(market, tpl)
     profile = market.profile
     issues = _market_issues(market)
 
-    cands, kv_map = collect_candidates(doc)
-    hints = DocHints()
+    cands, kv_map, ignored = collect_candidates(doc, tpl)
+    if tpl is not None:
+        issues += apply_rules(doc, tpl, cands)
+    hints = DocHints(date_order=tpl.date_order if tpl else None)
     normalised: dict[int, Any] = {}
     errors: dict[int, NormalizationError] = {}
     for path, cs in cands.items():
@@ -150,6 +188,11 @@ def run(
     fields = {p: fv for p, fv in resolved.items() if fv.value is not None}
 
     derive(fields, doc, profile)
+    if tpl is not None:  # the reviewer accepted these derived / text values for this layout
+        for path in tpl.accepted_derived:
+            fv = fields.get(path)
+            if fv and fv.method in (Method.derived, Method.text, Method.fuzzy):
+                fv.confidence = max(fv.confidence, ACCEPTED_DERIVED_SCORE)
     deal = build_deal(fields, market)
     issues += validate(deal, profile)
     missing = missing_required(deal)
@@ -171,5 +214,5 @@ def run(
         missing_required=missing,
         validation=issues,
         low_confidence=low,
-        unmapped=[kv for i, kv in enumerate(doc.pairs) if i not in kv_map],
+        unmapped=[kv for i, kv in enumerate(doc.pairs) if i not in kv_map and i not in ignored],
     )

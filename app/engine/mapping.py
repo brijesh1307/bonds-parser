@@ -3,16 +3,19 @@
 Lookup chain per label (full key first, then the key without parenthesised text):
   synonym / repo-leg key (0.95) -> abbreviation expansion (0.90) -> compound label split on "/"
   ('SECURITY NAME/ISIN NUMBER' -> security_name + isin, 0.95) -> fuzzy match (ratio x 0.85).
-Prose candidates always count as method `text` (0.80). Templates (PH3) add rank-3 lookups.
+Prose candidates count as method `text` (0.80). A matched template's label map comes first
+(method `template`, 1.00); its region / regex rules and constants are added by `apply_rules`.
 """
 
 from __future__ import annotations
 
 import difflib
+import re
 from typing import Any
 
 from app.engine.fields import (
     FUZZY_FACTOR,
+    IGNORE,
     METHOD_SCORE,
     SYNONYMS,
     Method,
@@ -22,7 +25,7 @@ from app.engine.fields import (
     leg_lookup,
     normalise_label,
 )
-from app.engine.models import Candidate, ExtractedDocument, FieldValue, Issue
+from app.engine.models import Candidate, ExtractedDocument, FieldValue, Issue, KeyValue, TemplateDefinition
 
 Hit = tuple[str, Method, float]
 
@@ -82,20 +85,90 @@ def lookup_label(label: str) -> list[Hit]:
     return [hit] if hit else []
 
 
-def collect_candidates(doc: ExtractedDocument) -> tuple[dict[str, list[Candidate]], dict[int, str]]:
-    """Candidates per field path, and key_values index -> field path(s) (comma-joined)."""
+def _template_hit(label: str, template: TemplateDefinition) -> str | None:
+    """Field path from the template's label map ('_ignore' included), full key first."""
+    for key in dict.fromkeys(normalise_label(label)):
+        if key in template.ignore:
+            return IGNORE
+        if key in template.label_map:
+            return template.label_map[key]
+    return None
+
+
+def collect_candidates(
+    doc: ExtractedDocument, template: TemplateDefinition | None = None
+) -> tuple[dict[str, list[Candidate]], dict[int, str], set[int]]:
+    """Candidates per field path, key_values index -> field path(s), and indices the template ignores."""
     cands: dict[str, list[Candidate]] = {}
     kv_map: dict[int, str] = {}
+    ignored: set[int] = set()
     for i, kv in enumerate(doc.pairs):
-        hits = lookup_label(kv.key)
+        target = _template_hit(kv.key, template) if template else None
+        if target == IGNORE:
+            ignored.add(i)
+            continue
+        if target:
+            hits: list[Hit] = [(target, Method.template, METHOD_SCORE[Method.template])]
+        else:
+            hits = lookup_label(kv.key)
         if not hits:
             continue
         kv_map[i] = ", ".join(h[0] for h in hits)
         for path, method, confidence in hits:
-            if kv.source is Source.prose:
+            if kv.source is Source.prose and method is not Method.template:
                 method, confidence = Method.text, METHOD_SCORE[Method.text]
             cands.setdefault(path, []).append(Candidate(path, kv, kv.value, method, confidence))
-    return cands, kv_map
+    return cands, kv_map, ignored
+
+
+def apply_rules(
+    doc: ExtractedDocument, template: TemplateDefinition, cands: dict[str, list[Candidate]]
+) -> list[Issue]:
+    """Template region rules (text inside a box), regex rules (over the slip text) and constants."""
+    issues: list[Issue] = []
+    for rule in template.region_rules:
+        words = doc.words[rule.page - 1] if 0 < rule.page <= len(doc.words) else []
+        x0, top, x1, bottom = rule.bbox
+        inside = [
+            w
+            for w, (wx0, wt, wx1, wb) in words
+            if wx0 >= x0 - 1 and wx1 <= x1 + 1 and wt >= top - 1 and wb <= bottom + 1
+        ]
+        if not inside:
+            issues.append(
+                Issue(
+                    "RULE_NO_MATCH",
+                    Severity.WARNING,
+                    f"region rule for {rule.field}: box is empty",
+                    (rule.field,),
+                )
+            )
+            continue
+        text = " ".join(inside)
+        kv = KeyValue(f"region:{rule.field}", text, Source.text, rule.page, rule.bbox, rule.bbox)
+        cands.setdefault(rule.field, []).append(
+            Candidate(rule.field, kv, text, Method.region, METHOD_SCORE[Method.region])
+        )
+    for rx in template.regex_rules:
+        m = re.search(rx.pattern, doc.text, re.IGNORECASE)
+        if not m or not m.group(rx.group):
+            issues.append(
+                Issue("RULE_NO_MATCH", Severity.WARNING, f"regex rule for {rx.field}: no match", (rx.field,))
+            )
+            continue
+        value = m.group(rx.group).strip()
+        kv = KeyValue(f"regex:{rx.field}", value, Source.prose, 1, None, None)
+        cands.setdefault(rx.field, []).append(
+            Candidate(rx.field, kv, value, Method.regex, METHOD_SCORE[Method.regex])
+        )
+    for path, value in template.constants.items():
+        strong = [c for c in cands.get(path, []) if RANK[c.method] <= RANK[Method.template]]
+        if not strong:  # a constant only fills a field the slip does not state itself
+            kv = KeyValue(f"constant:{path}", value, Source.prose, 1, None, None)
+            cands.setdefault(path, []).append(
+                Candidate(path, kv, value, Method.constant, METHOD_SCORE[Method.constant])
+            )
+    return issues
 
 
 def _sort_key(c: Candidate) -> tuple[Any, ...]:

@@ -22,7 +22,9 @@ _LOG_LEVELS = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"}
 @dataclass(frozen=True, slots=True)
 class Settings:
     data_dir: Path = Path("./data")  # BONDS_DATA_DIR
-    database_url: str = "sqlite:///./data/bonds.db"  # BONDS_DATABASE_URL
+    templates_dir: Path = Path("./templates")  # BONDS_TEMPLATES_DIR
+    clients_file: Path | None = None  # BONDS_CLIENTS_FILE (default <data_dir>/clients.json)
+    audit_file: Path | None = None  # BONDS_AUDIT_FILE (default <data_dir>/audit/audit.jsonl)
     max_upload_mb: int = 10  # BONDS_MAX_UPLOAD_MB
     max_pages: int = 20  # BONDS_MAX_PAGES
     confidence_threshold: float = 0.90  # BONDS_CONFIDENCE_THRESHOLD
@@ -36,8 +38,12 @@ class Settings:
     audit_retention_years: int = 8  # BONDS_AUDIT_RETENTION_YEARS
 
     @property
-    def uploads_dir(self) -> Path:
-        return self.data_dir / "uploads"
+    def clients_path(self) -> Path:
+        return self.clients_file or self.data_dir / "clients.json"
+
+    @property
+    def audit_path(self) -> Path:
+        return self.audit_file or self.data_dir / "audit" / "audit.jsonl"
 
     @property
     def max_upload_bytes(self) -> int:
@@ -94,7 +100,7 @@ class EngineSettings:
 
 def _parse(env_name: str, field: str, raw: str) -> object:
     try:
-        if field == "data_dir":
+        if field in ("data_dir", "templates_dir", "clients_file", "audit_file"):
             return Path(raw)
         if field == "cors_origins":
             return tuple(o.strip() for o in raw.split(",") if o.strip())
@@ -109,8 +115,6 @@ def _parse(env_name: str, field: str, raw: str) -> object:
             return float(raw)
         if field == "log_level":
             return raw.upper()
-        if field == "database_url":
-            return raw
         return int(raw)
     except ValueError as exc:
         raise ConfigError(f"invalid {env_name}={raw!r}: {exc}") from exc

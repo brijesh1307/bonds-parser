@@ -93,7 +93,7 @@ class InvalidPdfError(AppError):
 
 
 class MappingValidationError(AppError):
-    status, slug, title = 422, "invalid-mapping", "Invalid mapping payload"
+    status, slug, title = 400, "invalid-mapping", "Invalid mapping payload"
 
 
 class ApprovalBlockedError(AppError):

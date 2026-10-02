@@ -11,7 +11,9 @@ from app.errors import ConfigError
 def test_defaults_match_baseline() -> None:
     s = Settings.from_env({})
     assert s.data_dir == Path("./data")
-    assert s.database_url == "sqlite:///./data/bonds.db"
+    assert s.templates_dir == Path("./templates")
+    assert s.clients_path == Path("./data/clients.json")
+    assert s.audit_path == Path("./data/audit/audit.jsonl")
     assert (s.max_upload_mb, s.max_pages) == (10, 20)
     assert (s.confidence_threshold, s.template_match_threshold) == (0.90, 0.80)
     assert s.cors_origins == ("http://localhost:3000", "http://localhost:5173")
@@ -43,7 +45,8 @@ def test_env_overrides() -> None:
     assert s.cors_origins == ("https://a.example", "https://b.example")
     assert s.docs_enabled is False
     assert s.log_level == "DEBUG"
-    assert s.uploads_dir == Path("/srv/bonds/uploads")
+    assert s.clients_path == Path("/srv/bonds/clients.json")
+    assert s.audit_path == Path("/srv/bonds/audit/audit.jsonl")
 
 
 def test_blank_value_keeps_default() -> None:

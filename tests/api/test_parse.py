@@ -6,19 +6,14 @@ import hashlib
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.config import Settings
-from app.main import create_app
+from tests.api.conftest import MakeApp, authed
 from tests.conftest import make_pdf
 
 PROBLEM = "application/problem+json"
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-
-
-@pytest.fixture
-def client() -> TestClient:
-    return TestClient(create_app(Settings.from_env({})))
 
 
 def _upload(client: TestClient, data: bytes, name: str = "slip.pdf", **params: str) -> object:
@@ -30,7 +25,7 @@ def test_health(client: TestClient) -> None:
     assert r.status_code == 200
     body = r.json()
     assert body["status"] == "ok"
-    assert body["db"] == "not_configured"
+    assert (body["templates"], body["audit"]) == ("ok", "ok")
     assert body["version"]
 
 
@@ -107,8 +102,8 @@ def test_bad_files_return_problem_json(client: TestClient, data: bytes, status: 
     assert body["request_id"]
 
 
-def test_file_too_large() -> None:
-    client = TestClient(create_app(Settings.from_env({"BONDS_MAX_UPLOAD_MB": "1"})))
+def test_file_too_large(make_app: MakeApp) -> None:
+    client = authed(make_app(max_upload_mb="1"))
     r = _upload(client, b"%PDF-1.4\n" + b"0" * (1024 * 1024 + 1))
     assert r.status_code == 413  # type: ignore[attr-defined]
     assert r.json()["type"] == "urn:bonds-parser:problem:payload-too-large"  # type: ignore[attr-defined]
@@ -138,13 +133,13 @@ def test_swagger_documents_the_endpoints(client: TestClient) -> None:
 
 
 def test_unexpected_error_is_500_problem_without_internals(
-    monkeypatch: pytest.MonkeyPatch, slip01: Path
+    monkeypatch: pytest.MonkeyPatch, slip01: Path, app: FastAPI
 ) -> None:
     def boom(*args: object, **kwargs: object) -> None:
         raise RuntimeError("secret internal detail")
 
-    monkeypatch.setattr("app.services.slip_service.run", boom)
-    client = TestClient(create_app(Settings.from_env({})), raise_server_exceptions=False)
+    monkeypatch.setattr("app.services.parse_service.run", boom)
+    client = authed(app, raise_server_exceptions=False)
     r = _upload(client, slip01.read_bytes())
     assert r.status_code == 500  # type: ignore[attr-defined]
     body = r.json()  # type: ignore[attr-defined]

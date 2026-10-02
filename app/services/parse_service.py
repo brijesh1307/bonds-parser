@@ -1,7 +1,6 @@
-"""Slip business logic (docs/03_lld.md §3.8).
+"""Receive an upload safely and parse it with the active templates (baseline §4, ADR-0009).
 
-PH1: receive an upload safely and run the one-shot parse. Storage, preview and approve
-arrive in PH3.
+The PDF only ever lives in memory for the duration of the request; nothing is stored.
 """
 
 from __future__ import annotations
@@ -19,6 +18,7 @@ from app.engine.pipeline import run
 from app.errors import PayloadTooLargeError, UnsupportedMediaTypeError
 from app.schemas import slip as s
 from app.schemas.deal import Deal
+from app.services.template_store import TemplateStore
 
 CHUNK = 64 * 1024
 
@@ -37,10 +37,17 @@ def read_upload(upload: UploadFile, settings: Settings) -> tuple[bytes, str]:
     return bytes(data), digest.hexdigest()
 
 
-def parse_once(upload: UploadFile, settings: Settings) -> s.ParseResult:
+def parse_once(upload: UploadFile, settings: Settings, store: TemplateStore) -> tuple[EngineResult, int]:
+    """Parse with the active templates. Returns the engine result and the file size (for audit)."""
     data, sha256 = read_upload(upload, settings)
-    result = run(data, file_name=upload.filename or "upload.pdf", sha256=sha256, es=settings.engine)
-    return to_schema(result)
+    result = run(
+        data,
+        file_name=upload.filename or "upload.pdf",
+        sha256=sha256,
+        es=settings.engine,
+        templates=store.active_definitions(),
+    )
+    return result, len(data)
 
 
 def _bbox(b: BBox | None) -> list[float] | None:
