@@ -43,3 +43,25 @@ jobs:
 
       - name: Dependency audit
         run: pip-audit -r requirements.txt
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: checks
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build image
+        run: docker build -t bonds-parser:ci .
+
+      - name: Run container and check /health
+        run: |
+          docker run -d --name api -p 8000:8000 bonds-parser:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health; then echo; break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8000/health | grep -q '"status":"ok"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/v1/templates)" = "401"
+          docker exec api python -m app.cli add-client ci-check | grep -q "secret:"
+          docker logs api | tail -20

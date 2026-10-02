@@ -35,33 +35,32 @@ then parse automatically. Every action is audited. Access uses client credential
 | 12 | [Project plan](12_project_plan.md) | Tasks and sub-tasks, 2-hour MVP list, roadmap, milestones, go-live checklist | Plan |
 | 13 | [Development plan](13_development_plan.md) | How to build it: environments, setup, branching, build order (iterations), CI/CD, reviews | Plan |
 | 14 | [Task breakdown](14_task_breakdown.md) | **Master plan:** every phase, task and sub-task with doc references, estimates, dependencies and done-criteria (CSV: `task_breakdown.csv`) | Plan |
-| ADR | [Architecture decisions](adr/README.md) | Why each key technology/design choice was made and what was rejected | Decisions |
+| ADR | [Architecture decisions](adr/README.md) — incl. [ADR-0009 stateless, no slip storage](adr/0009-stateless-api-no-slip-storage.md) | Why each key technology/design choice was made and what was rejected | Decisions |
 
 ## Project files and what they are for
 
-| Path | Purpose | When it exists |
-|---|---|---|
-| `app/main.py` | FastAPI app, Swagger metadata, CORS, routers, error handlers | MVP |
-| `app/config.py` | Reads `BONDS_*` env vars | MVP |
-| `app/auth.py` | HTTP Basic check, Argon2, brute-force limiter | MVP |
-| `app/cli.py` | `init-db`, `add-client`, `list-clients`, `disable-client`, `rotate-secret` | MVP |
-| `app/api/` | One router per tag: health, parse, slips, templates, schema, exports, audit | MVP (some endpoints later) |
-| `app/schemas/` | Pydantic request/response models (these generate Swagger) | MVP |
-| `app/services/` | Business logic: slips, templates, exports, audit | MVP |
-| `app/engine/` | The parser: extract, market, detect, mapping, normalize, derive, validate, pipeline | MVP |
-| `app/engine/profiles/` | Market profiles (`IN.json` in MVP; `US.json`, `GB.json`, `INTL.json` later) | MVP / later |
-| `app/export/` | JSON, XML, Excel writers | MVP |
-| `app/db/` | SQLAlchemy engine/session, models, (later) Alembic migrations | MVP |
-| `tests/` | Engine, golden-file, API, audit and auth tests | MVP |
-| `docs/` | This documentation | Now |
-| `samples/mock/` | 4 mock slips + expected JSON (committed) | Now |
-| `samples/real/` | Masked real slips (git-ignored) | When you add them |
-| `tools/generate_mock_slips.py` | Regenerates mock slips + expected JSON | Now |
-| `.env.example` | All configuration variables with defaults — copy to `.env` | Now |
-| `requirements.txt` | Python dependencies | Now |
-| `data/` | SQLite DB + uploaded PDFs (git-ignored, created at runtime) | Runtime |
-| `README.md` | Quick start | MVP |
-| `Dockerfile`, `docker-compose.yml` | Container build / local stack | After MVP |
+| Path | Purpose |
+|---|---|
+| `app/main.py` | FastAPI app, Swagger metadata, request-ID / access-log middleware, CORS, routers |
+| `app/config.py` | Reads `BONDS_*` env vars |
+| `app/auth.py` | HTTP Basic check, Argon2, file-based client store, brute-force limiter |
+| `app/cli.py` | `debug-extract`, `add-client`, `list-clients`, `disable-client`, `rotate-secret`, `verify-audit` |
+| `app/api/` | Routers: health, parse, templates, schema + audit; `deps.py` (auth, context), `errors.py` (RFC 7807) |
+| `app/schemas/` | Pydantic request/response models (these generate Swagger) |
+| `app/services/` | `parse_service`, `template_service`, `template_store` (JSON files), `audit_service` (JSON-lines log) |
+| `app/engine/` | The parser: extract, market, detect, mapping, normalize, derive, validate, pipeline |
+| `app/engine/profiles/` | Market profiles (`IN.json` active; others later) |
+| `app/export/` | JSON, XML, Excel writers |
+| `templates/` | Approved templates, one JSON file each (labels and rules only; reviewed in git) |
+| `tests/` | Unit, golden-file (6 mock slips), API, auth and audit tests |
+| `docs/` | This documentation |
+| `samples/mock/` | 6 fictitious mock slips + expected JSON |
+| `samples/real/` | Masked real slips (git-ignored, blocked by a pre-commit hook) |
+| `tools/` | `generate_mock_slips.py`, `build_task_plan.py`, `demo.py` (end-to-end demo) |
+| `data/` | `clients.json` and `audit/audit.jsonl` (git-ignored, created at runtime). **No slips, ever.** |
+| `.env.example` | All configuration variables with defaults |
+| `Dockerfile`, `docker-compose.yml` | Container image (non-root, one worker) and local stack |
+| `README.md` | Quick start |
 
 ## How to use these documents
 

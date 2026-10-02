@@ -1,0 +1,16 @@
+# Local stack: the API with templates and data on host folders.
+#   docker compose up --build
+#   docker compose exec api python -m app.cli add-client frontend
+services:
+  api:
+    build: .
+    image: bonds-parser:latest
+    ports:
+      - "127.0.0.1:8000:8000"   # localhost only; put a TLS reverse proxy in front for other machines
+    environment:
+      BONDS_CORS_ORIGINS: "http://localhost:3000,http://localhost:5173"
+      BONDS_DOCS_ENABLED: "true"
+    volumes:
+      - ./templates:/srv/bonds/templates   # approved templates (labels and rules only)
+      - ./data:/srv/bonds/data             # clients.json and audit/audit.jsonl
+    restart: unless-stopped
