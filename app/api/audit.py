@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query, Response
 
 from app.api.deps import Client, audit_log
 from app.engine.fields import BASE_REQUIRED, FIELD_SPECS, REQUIRED_BY_TYPE, is_valid_field_path
 from app.engine.profiles import available_profiles
+from app.export import audit_export
 from app.export.xsd import build_xsd
 from app.schemas.audit import AuditEventOut, AuditPage, AuditVerifyOut, FieldDef, MarketProfileOut
 from app.services.audit_service import AuditLog
@@ -42,6 +43,47 @@ def search_audit(
     )
     return AuditPage(
         items=[AuditEventOut.model_validate(i) for i in items], total=total, limit=limit, offset=offset
+    )
+
+
+_EXPORT = {
+    "csv": ("text/csv; charset=utf-8", ".csv", audit_export.to_csv),
+    "xlsx": (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ".xlsx",
+        audit_export.to_xlsx,
+    ),
+    "json": ("application/json", ".json", audit_export.to_json),
+}
+
+
+@audit_router.get(
+    "/export",
+    summary="Download the audit log (CSV, Excel or JSON)",
+    response_class=Response,
+    responses={200: {"content": {"text/csv": {}, "application/json": {}}, "description": "Audit records"}},
+)
+def export_audit(
+    ctx: Client,
+    log: Log,
+    format: Annotated[Literal["csv", "xlsx", "json"], Query()] = "csv",
+    date_from: Annotated[str | None, Query(alias="from", description="ISO date / time prefix, UTC")] = None,
+    date_to: Annotated[str | None, Query(alias="to", description="ISO date / time prefix, UTC")] = None,
+) -> Response:
+    """Every record in the range, oldest first, with all fields (incl. hashes, so the copy can be
+    verified independently). The export itself is audited as `AUDIT_EXPORTED`."""
+    records = log.records(date_from=date_from, date_to=date_to)
+    media, ext, render = _EXPORT[format]
+    ctx.audit(
+        log,
+        "AUDIT_EXPORTED",
+        entity_type="audit",
+        details={"format": format, "from": date_from, "to": date_to, "count": len(records)},
+    )
+    return Response(
+        content=render(records),
+        media_type=media,
+        headers={"Content-Disposition": f'attachment; filename="audit{ext}"'},
     )
 
 

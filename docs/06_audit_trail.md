@@ -56,8 +56,9 @@ line, written in canonical form (sorted keys, no spaces), opened in **append** m
 | `AUTH_FAILED` | any protected endpoint | `client` / attempted id | `reason` (`MISSING_HEADER`, `UNKNOWN_CLIENT`, `BAD_SECRET`, `CLIENT_DISABLED`), `path` |
 | `AUTH_BLOCKED` | limiter threshold reached | `client` / attempted id | `ip, block_seconds, window_seconds` |
 | `CLIENT_ADDED`, `CLIENT_DISABLED`, `CLIENT_SECRET_ROTATED` | CLI | `client` / id | – |
+| `AUDIT_EXPORTED` | `GET /api/v1/audit/export` | `audit` / – | `format, from, to, count` |
 
-Reads (`GET` templates, schema, audit, `verify`) are not audited.
+Reads (`GET` templates, history, schema, audit, `verify`, `/metrics`) are not audited; exports are.
 
 ## 5. Rules
 
@@ -114,3 +115,5 @@ or inserted. Deleting the **newest** records cannot be seen from the file alone:
 - `GET /api/v1/audit?entity_id=<sha256>` — every parse of one file (compute the SHA-256 of a PDF
   you hold to find its records).
 - `GET /api/v1/audit/verify` — integrity of the whole log.
+- `GET /api/v1/audit/export?format=xlsx&from=2026-10-01&to=2026-10-31` — a copy for the audit file;
+  it includes the hashes, so the chain can be re-verified from the copy.

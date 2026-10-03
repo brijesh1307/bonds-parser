@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -94,6 +94,17 @@ class TemplateImport(BaseModel):
     name: str
     description: str | None = None
     definition: TemplateDefinitionModel
+
+
+class TemplateHistoryItem(BaseModel):
+    version: int
+    created_by: str
+    created_at: datetime
+    note: str | None
+    changes: dict[str, Any] | None = Field(
+        description="Difference from the previous version; null for version 1",
+        examples=[{"label_map": {"added": {"stl dt": "settlement_date"}, "removed": {}, "changed": {}}}],
+    )
 
 
 class ApproveResult(BaseModel):

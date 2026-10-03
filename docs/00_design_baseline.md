@@ -202,7 +202,8 @@ template_id, template_version, match_score, format}`.
 
 `SLIP_PARSED, TEMPLATE_PREVIEWED, TEMPLATE_CREATED, TEMPLATE_VERSION_ADDED, TEMPLATE_UPDATED,
 TEMPLATE_ENABLED, TEMPLATE_DISABLED, TEMPLATE_IMPORTED, AUTH_FAILED, AUTH_BLOCKED, CLIENT_ADDED,
-CLIENT_DISABLED, CLIENT_SECRET_ROTATED`. Reads (list / get / verify) are not audited.
+CLIENT_DISABLED, CLIENT_SECRET_ROTATED, AUDIT_EXPORTED`. Reads (list / get / history / verify /
+metrics) are not audited.
 
 ---
 
@@ -213,6 +214,7 @@ All under `/api/v1` except System. All require header credentials except `/healt
 | Tag | Method | Path | Purpose |
 |---|---|---|---|
 | System | GET | `/health` | Liveness + template store check (open) |
+| | GET | `/metrics` | Prometheus metrics (credentials required) |
 | Parse | POST | `/api/v1/parse?format=json\|xml\|xlsx` | Parse one PDF with the active templates; nothing stored |
 | Templates | POST | `/api/v1/templates/preview` | PDF + draft mapping → the result that mapping would give (nothing saved) |
 | | POST | `/api/v1/templates` | PDF + approved mapping → create a template, or a new version of `template_id` |
@@ -220,11 +222,14 @@ All under `/api/v1` except System. All require header credentials except `/healt
 | | GET | `/api/v1/templates/{id}` | Template with all versions |
 | | PUT | `/api/v1/templates/{id}` | Add a new version from a definition (no PDF needed) |
 | | PATCH | `/api/v1/templates/{id}` | Enable / disable, rename, describe |
+| | GET | `/api/v1/templates/{id}/history` | Versions with the changes of each version |
 | | POST | `/api/v1/templates/import` | Import a template exported from another environment |
 | Schema | GET | `/api/v1/schema/fields` | Canonical fields (type, enum, required-for) for mapping UIs |
 | | GET | `/api/v1/schema/markets` | Active market profiles |
+| | GET | `/api/v1/schema/xsd` | XSD of the XML output |
 | Audit | GET | `/api/v1/audit?action=&actor_id=&entity_id=&from=&to=&limit=&offset=` | Search the audit log |
 | | GET | `/api/v1/audit/verify` | Verify the hash chain |
+| | GET | `/api/v1/audit/export?format=csv\|xlsx\|json&from=&to=` | Download the audit log (oldest first) |
 
 Preview and approve are `multipart/form-data`: `file` (the PDF) and `mapping` (JSON text):
 
@@ -317,9 +322,9 @@ bonds-parser/
 
 ## 10. Libraries
 
-`fastapi, uvicorn, python-multipart, pydantic, pdfplumber, openpyxl, argon2-cffi, reportlab
-(mock generator), pytest, httpx`. Later: `pytesseract / ocrmypdf` (OCR), `pikepdf`
-(password-protected PDFs), `structlog, prometheus-client, sentry-sdk`.
+`fastapi, uvicorn, python-multipart, pydantic, pdfplumber, openpyxl, argon2-cffi,
+prometheus-client, reportlab (mock generator), pytest, httpx2, xmlschema (tests)`. Later: `pytesseract / ocrmypdf` (OCR), `pikepdf`
+(password-protected PDFs), `structlog, sentry-sdk`.
 
 ---
 

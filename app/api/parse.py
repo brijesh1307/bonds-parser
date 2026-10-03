@@ -6,7 +6,7 @@ import re
 from pathlib import PurePath
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Query, Request, Response, UploadFile
 
 from app.api.deps import Client, audit_log, settings_of, template_store
 from app.api.errors import PROBLEM_RESPONSES
@@ -43,6 +43,7 @@ def _download_name(result: ParseResult, ext: str) -> str:
     responses=_RESPONSES,
 )
 def parse(
+    request: Request,
     ctx: Client,
     file: Annotated[UploadFile, File(description="Deal slip PDF")],
     settings: Annotated[Settings, Depends(settings_of)],
@@ -89,6 +90,9 @@ def parse(
             "match_score": t.score,
             "format": format,
         },
+    )
+    request.app.state.metrics.observe_parse(
+        result.status, result.market.market, t.template_id if t.matched else None
     )
     if format == "json":
         return result

@@ -27,9 +27,9 @@ Progress is the share of estimated effort done, ignoring dropped sub-tasks.
 | PH3 | Templates (file-based; no slip storage) | `v0.1.0` | ✅ | 100% | 13 / 0 / 0 / 5 | 2.3 d |
 | PH4 | Authentication & audit | `v0.1.0` | ✅ | 100% | 14 / 0 / 0 / 0 | 1.3 d |
 | PH5 | Outputs & MVP release | `v0.1.0` | ✅ | 100% | 8 / 0 / 0 / 0 | 6.25 h |
-| PH6 | Storage & remaining endpoints | `v0.2.0` | 🟡 | 67% | 2 / 1 / 1 / 7 | 4 d |
-| PH7 | Operations | `v0.3.0` | 🟡 | 34% | 1 / 4 / 3 / 0 | 4 d |
-| PH8 | Hardening | `v0.4.0` | 🟡 | 8% | 1 / 0 / 8 / 0 | 6.5 d |
+| PH6 | Storage & remaining endpoints | `v0.2.0` | ✅ | 100% | 4 / 0 / 0 / 7 | 4 d |
+| PH7 | Operations | `v0.3.0` | 🟡 | 44% | 1 / 5 / 2 / 0 | 4 d |
+| PH8 | Hardening | `v0.4.0` | 🟡 | 15% | 2 / 0 / 7 / 0 | 6.5 d |
 | PH9 | Real formats, UAT & go-live | `v1.0.0` | ⬜ | 0% | 0 / 0 / 7 / 0 | 29 d |
 | PH10 | Additional market profiles | `v1.1.0` | ⬜ | 0% | 0 / 0 / 5 / 0 | 4 d |
 
@@ -407,7 +407,7 @@ Refs: 12§2, 13§5 It5 · Depends on: T5.3 · **Done when:** Demo runs clean; `v
 
 ---
 
-## PH6 · Storage & remaining endpoints — `v0.2.0` · 4 d · 🟡 67%
+## PH6 · Storage & remaining endpoints — `v0.2.0` · 4 d · ✅ 100%
 
 **Goal:** Production database and every Later endpoint.  
 **Maps to:** `12_project_plan.md` P1
@@ -432,28 +432,28 @@ Refs: 04§4.4, 4.10, 4.13, FR-03, FR-18 · Depends on: T6.1 · **Done when:** FR
 | 6.2.2 | `POST /slips/{id}/reparse?force=` (409 without force on APPROVED) | 04§4.10 | 2 h | ⛔ no stored slips (ADR-0009) |
 | 6.2.3 | `DELETE /slips/{id}` (audit row kept) | 04§4.13, 06§5.7 | 2 h | ⛔ no stored slips (ADR-0009) |
 
-### T6.3 · Template endpoints (Later) (1 d) 🟡
+### T6.3 · Template endpoints (Later) (1 d) ✅
 
 Refs: 04§4.16–4.19, FR-19, FR-27 · Depends on: T6.1 · **Done when:** FR-19 and FR-27 acceptance met
 
 | ID | Sub-task | Refs | Est. | Status |
 |---|---|---|---|---|
 | 6.3.1 | `PUT` (new version), `PATCH` (enable/disable/rename, TEMPLATE_UPDATED) | 04§4.16–4.17 | 4 h | ✅ |
-| 6.3.2 | `POST /templates/import`, `GET /templates/{id}/history` with version diffs | 04§4.18–4.19 | 4 h | 🟡 import done; versions visible in GET /templates/{id}; diff endpoint open |
+| 6.3.2 | `POST /templates/import`, `GET /templates/{id}/history` with version diffs | 04§4.18–4.19 | 4 h | ✅ import + GET /templates/{id}/history with per-version diffs |
 
-### T6.4 · Combined exports (1 d) 🟡
+### T6.4 · Combined exports (1 d) ✅
 
 Refs: 04§4.22, 4.25, FR-16 · Depends on: T6.1 · **Done when:** XML validates against XSD
 
 | ID | Sub-task | Refs | Est. | Status |
 |---|---|---|---|---|
 | 6.4.1 | `GET /exports/deals` (DEALS_EXPORTED) | 04§4.22 | 4 h | ⛔ no stored deals to export (ADR-0009) |
-| 6.4.2 | `GET /audit/export` csv/xlsx/json (AUDIT_EXPORTED) | 04§4.25 | 2 h | ⬜ audit export endpoint |
+| 6.4.2 | `GET /audit/export` csv/xlsx/json (AUDIT_EXPORTED) | 04§4.25 | 2 h | ✅ GET /api/v1/audit/export csv / xlsx / json |
 | 6.4.3 | XSD for the XML output | 05§6 | 2 h | ✅ |
 
 ---
 
-## PH7 · Operations — `v0.3.0` · 4 d · 🟡 34%
+## PH7 · Operations — `v0.3.0` · 4 d · 🟡 44%
 
 **Goal:** Deployable, observable and recoverable. Can run in parallel with PH8.  
 **Maps to:** `12_project_plan.md` P4
@@ -482,7 +482,7 @@ Refs: 11§5.2, 11§7, NFR-15 · Depends on: T7.1 · **Done when:** Dashboards: p
 | ID | Sub-task | Refs | Est. | Status |
 |---|---|---|---|---|
 | 7.3.1 | structlog JSON logs with request id | 03§9.4 | 2 h | 🟡 access log with request id; JSON logging open |
-| 7.3.2 | Prometheus metrics + Sentry | 11§7 | 6 h | ⬜ |
+| 7.3.2 | Prometheus metrics + Sentry | 11§7 | 6 h | 🟡 Prometheus /metrics done; Sentry / error tracking open |
 
 ### T7.4 · Backups, retention (1 d) 🟡
 
@@ -503,7 +503,7 @@ Refs: 07§3, 07§6, NFR-06 · Depends on: T7.1 · **Done when:** TLS-only access
 
 ---
 
-## PH8 · Hardening — `v0.4.0` · 6.5 d · 🟡 8%
+## PH8 · Hardening — `v0.4.0` · 6.5 d · 🟡 15%
 
 **Goal:** Scans, locked PDFs, multi-deal PDFs, brute force and performance handled.  
 **Maps to:** `12_project_plan.md` P2
@@ -550,14 +550,14 @@ Refs: 09§5, R-05 · Depends on: PH5 · **Done when:** Holiday settlement flagge
 |---|---|---|---|---|
 | 8.5.1 | Indian holiday calendar loader + validation warning | 09§5 | 4 h | ⬜ |
 
-### T8.6 · Robustness & performance (1 d) ⬜
+### T8.6 · Robustness & performance (1 d) 🟡
 
 Refs: NFR-01, NFR-02, NFR-09, 10§9 · Depends on: PH5 · **Done when:** p95 ≤ 3 s; malformed PDFs rejected safely
 
 | ID | Sub-task | Refs | Est. | Status |
 |---|---|---|---|---|
 | 8.6.1 | Fuzz malformed / huge PDFs; parser time and memory limits | NFR-09 | 4 h | ⬜ |
-| 8.6.2 | Performance test | 10§9 | 4 h | ⬜ |
+| 8.6.2 | Performance test | 10§9 | 4 h | ✅ tests/perf + tools/benchmark.py: p95 0.44 s on the mock slips (target 3 s) |
 
 ---
 

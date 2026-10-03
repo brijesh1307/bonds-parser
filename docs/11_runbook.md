@@ -105,6 +105,14 @@ store is not writable (disk full, permissions). The container has a built-in hea
 One access-log line per request: method, path, status, duration, client id, request id. Find a
 user's problem by the `X-Request-ID` they saw (it is also in the audit record).
 
+### 5.2a Metrics
+
+`GET /metrics` (Prometheus, client credentials). Suggested alerts: p95 of
+`bonds_http_request_duration_seconds{route="/api/v1/parse"}` > 3 s; a rising share of
+`bonds_parses_total{status="NEEDS_REVIEW"}` (a layout drifted); spikes in
+`bonds_auth_failures_total`; `bonds_templates_active` dropping to 0. Performance check on a
+machine: `python tools/benchmark.py`.
+
 ### 5.3 Backups and restore
 
 Back up **only** `templates/` and `data/` (there is no slip data). Restore = put both folders back
@@ -118,7 +126,8 @@ consumer). Leaver / incident: `disable-client NAME`. Review `list-clients` month
 ### 5.5 Audit verification
 
 Daily `python -m app.cli verify-audit` (exit code 1 = broken chain) and record the last hash
-(`GET /api/v1/audit/verify` → `last_hash`) outside the server.
+(`GET /api/v1/audit/verify` → `last_hash`) outside the server. Monthly copy for auditors:
+`GET /api/v1/audit/export?format=xlsx&from=YYYY-MM-01&to=YYYY-MM-31`.
 
 ### 5.6 Audit retention and archive
 

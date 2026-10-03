@@ -39,6 +39,7 @@ from app.errors import (
 from app.schemas.template import (
     MappingSpec,
     TemplateDefinitionModel,
+    TemplateHistoryItem,
     TemplateImport,
     TemplateOut,
     TemplatePatch,
@@ -297,6 +298,70 @@ def import_template(store: TemplateStore, body: TemplateImport, actor: str) -> d
         actor=actor,
         note="imported",
     )
+
+
+_MAP_KEYS = ("label_map", "constants")
+_SET_KEYS = ("ignore", "accepted_derived")
+_RULE_KEYS = ("region_rules", "regex_rules")
+_SCALAR_KEYS = ("market", "match_threshold", "date_order")
+
+
+def diff_definitions(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
+    """What changed between two template definitions (only keys that changed are returned)."""
+    out: dict[str, Any] = {}
+    for key in _MAP_KEYS:
+        a, b = old.get(key) or {}, new.get(key) or {}
+        d = {
+            "added": {k: b[k] for k in sorted(b.keys() - a.keys())},
+            "removed": {k: a[k] for k in sorted(a.keys() - b.keys())},
+            "changed": {k: {"old": a[k], "new": b[k]} for k in sorted(a.keys() & b.keys()) if a[k] != b[k]},
+        }
+        if any(d.values()):
+            out[key] = d
+    pairs = [(k, (old.get(k) or []), (new.get(k) or [])) for k in _SET_KEYS]
+    pairs += [
+        (
+            "fingerprint.labels",
+            (old.get("fingerprint") or {}).get("labels") or [],
+            (new.get("fingerprint") or {}).get("labels") or [],
+        ),
+        (
+            "fingerprint.keywords",
+            (old.get("fingerprint") or {}).get("keywords") or [],
+            (new.get("fingerprint") or {}).get("keywords") or [],
+        ),
+    ]
+    for key, a_list, b_list in pairs:
+        a_set, b_set = set(a_list), set(b_list)
+        if a_set != b_set:
+            out[key] = {"added": sorted(b_set - a_set), "removed": sorted(a_set - b_set)}
+    for key in _RULE_KEYS:
+        if (old.get(key) or []) != (new.get(key) or []):
+            out[key] = {"old": old.get(key) or [], "new": new.get(key) or []}
+    for key in _SCALAR_KEYS:
+        if old.get(key) != new.get(key):
+            out[key] = {"old": old.get(key), "new": new.get(key)}
+    return out
+
+
+def history(record: dict[str, Any]) -> list[TemplateHistoryItem]:
+    items: list[TemplateHistoryItem] = []
+    previous: dict[str, Any] | None = None
+    for v in sorted(record["versions"], key=lambda v: v["version"]):
+        changes: dict[str, Any] | None = (
+            None if previous is None else diff_definitions(previous["definition"], v["definition"])
+        )
+        items.append(
+            TemplateHistoryItem(
+                version=v["version"],
+                created_by=v["created_by"],
+                created_at=v["created_at"],
+                note=v.get("note"),
+                changes=changes,
+            )
+        )
+        previous = v
+    return items
 
 
 def to_out(record: dict[str, Any], *, versions: bool = False) -> TemplateOut:

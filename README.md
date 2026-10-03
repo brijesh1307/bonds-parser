@@ -56,7 +56,9 @@ Templates are kept in `./templates` and clients / audit in `./data` (both mounte
 | `POST /api/v1/templates` | PDF + mapping → save a template (or a new version) |
 | `GET / PUT / PATCH /api/v1/templates/{id}`, `POST /api/v1/templates/import` | Manage templates |
 | `GET /api/v1/schema/fields`, `/schema/markets` | Canonical fields and markets (for mapping UIs) |
-| `GET /api/v1/audit`, `/audit/verify` | Search and verify the audit log |
+| `GET /api/v1/templates/{id}/history` | Template versions with what changed |
+| `GET /api/v1/audit`, `/audit/verify`, `/audit/export` | Search, verify and download the audit log |
+| `GET /metrics` | Prometheus metrics (credentials required) |
 
 ```bash
 # parse (JSON body); use format=xlsx or format=xml to download a file
@@ -94,6 +96,7 @@ pre-commit install
 pytest                                       # unit, golden-file, API, auth and audit tests
 ruff check . && ruff format --check . && mypy
 python tools/generate_mock_slips.py          # regenerate the fictitious mock slips
+python tools/benchmark.py                    # parse-time p50 / p95 against the 3 s target
 ```
 
 Real slips belong in `samples/real/` (git-ignored, and blocked by a pre-commit hook). Never

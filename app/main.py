@@ -19,6 +19,7 @@ from app import __version__
 from app.api import audit, errors, health, parse, templates
 from app.auth import ClientStore, FailureLimiter
 from app.config import Settings, get_settings
+from app.metrics import Metrics
 from app.services.audit_service import AuditLog
 from app.services.template_store import TemplateStore
 
@@ -26,7 +27,7 @@ log = logging.getLogger("app.access")
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
 
 OPENAPI_TAGS = [
-    {"name": "System", "description": "Liveness (open, no credentials)."},
+    {"name": "System", "description": "Liveness (open) and Prometheus metrics (client credentials)."},
     {
         "name": "Parse",
         "description": "Upload a deal slip PDF, get the deal back as JSON / XML / Excel. Nothing is stored.",
@@ -70,6 +71,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.limiter = FailureLimiter(
         settings.auth_max_failures, settings.auth_window_seconds, settings.auth_block_seconds
     )
+    app.state.metrics = Metrics(lambda: len(app.state.template_store.find(is_active=True)))
 
     @app.middleware("http")
     async def request_context(
@@ -80,12 +82,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         start = time.perf_counter()
         response = await call_next(request)
         response.headers["X-Request-ID"] = request.state.request_id
+        elapsed = time.perf_counter() - start
+        route = getattr(request.scope.get("route"), "path", "unmatched")  # template, not the raw path
+        app.state.metrics.observe_request(request.method, route, response.status_code, elapsed)
         log.info(
             "%s %s %s %.0fms client=%s request_id=%s",
             request.method,
             request.url.path,
             response.status_code,
-            (time.perf_counter() - start) * 1000,
+            elapsed * 1000,
             getattr(request.state, "client_id", None),
             request.state.request_id,
         )
@@ -101,6 +106,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     errors.install(app)
     app.include_router(health.router)
+    app.include_router(health.metrics_router)
     app.include_router(parse.router)
     app.include_router(templates.router)
     app.include_router(audit.schema_router)

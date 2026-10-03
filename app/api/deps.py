@@ -11,7 +11,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from app.auth import ClientStore, FailureLimiter
 from app.config import Settings
-from app.errors import AuthError
+from app.errors import AuthBlockedError, AuthError
 from app.services.audit_service import AuditLog
 from app.services.template_store import TemplateStore
 
@@ -73,8 +73,13 @@ def require_client(
     clients: ClientStore = request.app.state.client_store
     limiter: FailureLimiter = request.app.state.limiter
     log: AuditLog = request.app.state.audit_log
+    metrics = request.app.state.metrics
     ip = request.client.host if request.client else "unknown"
-    limiter.check(ip)
+    try:
+        limiter.check(ip)
+    except AuthBlockedError:
+        metrics.auth_failures.labels("BLOCKED").inc()
+        raise
 
     if credentials is None:
         ok, reason, attempted = False, "MISSING_HEADER", None
@@ -86,6 +91,7 @@ def require_client(
         request.state.client_id = attempted
         return _context(request, attempted)
 
+    metrics.auth_failures.labels(reason).inc()
     ctx = _context(request, None)
     ctx.audit(
         log,

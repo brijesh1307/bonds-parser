@@ -18,6 +18,7 @@ from app.schemas.slip import ParseResult
 from app.schemas.template import (
     ApproveResult,
     MappingSpec,
+    TemplateHistoryItem,
     TemplateImport,
     TemplateOut,
     TemplatePatch,
@@ -148,6 +149,18 @@ def list_templates(
 )
 def get_template(ctx: Client, store: Store, template_id: TemplateId) -> TemplateOut:
     return template_service.to_out(store.get(template_id), versions=True)
+
+
+@router.get(
+    "/{template_id}/history",
+    summary="Version history with the changes of each version",
+    response_model=list[TemplateHistoryItem],
+    responses=_ERRORS,
+)
+def template_history(ctx: Client, store: Store, template_id: TemplateId) -> list[TemplateHistoryItem]:
+    """Every version, oldest first, with what changed compared to the version before it
+    (label map, ignore list, rules, constants, keywords, fingerprint, threshold, market)."""
+    return template_service.history(store.get(template_id))
 
 
 @router.put(

@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 
 from app import __version__
+from app.api.deps import Client
+from app.metrics import CONTENT_TYPE_LATEST
 from app.schemas.common import HealthOut
 
 router = APIRouter(tags=["System"])
@@ -29,3 +31,18 @@ def health(request: Request) -> JSONResponse:
         time=datetime.now(UTC),
     )
     return JSONResponse(body.model_dump(mode="json"), status_code=200 if ok else 503)
+
+
+metrics_router = APIRouter(tags=["System"])
+
+
+@metrics_router.get(
+    "/metrics",
+    summary="Prometheus metrics",
+    response_class=Response,
+    responses={200: {"content": {"text/plain": {}}, "description": "Prometheus text format"}},
+)
+def metrics(request: Request, ctx: Client) -> Response:
+    """Request counts and latency per route, parse results by status / market, template hits,
+    authentication failures and active templates. Scrape with HTTP Basic client credentials."""
+    return Response(content=request.app.state.metrics.render(), media_type=CONTENT_TYPE_LATEST)

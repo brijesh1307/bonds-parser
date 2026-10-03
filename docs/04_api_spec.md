@@ -16,6 +16,7 @@ the approved templates, the API clients and the audit log.
 | Tag | Method | Path | Purpose | Audit |
 |---|---|---|---|---|
 | System | GET | `/health` | Liveness (open, no credentials) | – |
+| | GET | `/metrics` | Prometheus metrics | – |
 | Parse | POST | `/api/v1/parse?format=json\|xml\|xlsx` | Parse one PDF with the active templates | `SLIP_PARSED` |
 | Templates | POST | `/api/v1/templates/preview` | PDF + draft mapping → the result it would give | `TEMPLATE_PREVIEWED` |
 | | POST | `/api/v1/templates` | PDF + mapping → create a template or a new version | `TEMPLATE_CREATED` / `TEMPLATE_VERSION_ADDED` |
@@ -23,12 +24,14 @@ the approved templates, the API clients and the audit log.
 | | GET | `/api/v1/templates/{id}` | One template with all versions | – |
 | | PUT | `/api/v1/templates/{id}` | New version from an edited definition | `TEMPLATE_VERSION_ADDED` |
 | | PATCH | `/api/v1/templates/{id}` | Enable / disable, rename, describe | `TEMPLATE_ENABLED` / `_DISABLED` / `_UPDATED` |
+| | GET | `/api/v1/templates/{id}/history` | Versions with what changed in each | – |
 | | POST | `/api/v1/templates/import` | Import a template from another environment | `TEMPLATE_IMPORTED` |
 | Schema | GET | `/api/v1/schema/fields` | Canonical fields for mapping dropdowns | – |
 | | GET | `/api/v1/schema/markets` | Active market profiles | – |
 | | GET | `/api/v1/schema/xsd` | XSD of the XML output | – |
 | Audit | GET | `/api/v1/audit` | Search the audit log (newest first) | – |
 | | GET | `/api/v1/audit/verify` | Verify the hash chain | – |
+| | GET | `/api/v1/audit/export?format=csv\|xlsx\|json` | Download the audit log | `AUDIT_EXPORTED` |
 
 ---
 
@@ -232,6 +235,21 @@ Response **201** `ApproveResult`. Audit: `TEMPLATE_CREATED` or `TEMPLATE_VERSION
 
 List (`is_active`, `market` filters) and detail (with `versions`). 404 for an unknown id.
 
+### 4.5a `GET /api/v1/templates/{id}/history`
+
+Every version, oldest first: `{version, created_by, created_at, note, changes}`. `changes` is
+`null` for version 1, otherwise only what changed compared to the previous version:
+
+```json
+{"label_map": {"added": {"gst no": "deal_id"}, "removed": {}, "changed": {}},
+ "ignore": {"added": [], "removed": ["gst no"]},
+ "constants": {"added": {}, "removed": {}, "changed": {"platform": {"old": "OTC", "new": "OTC / NSE RFQ"}}},
+ "fingerprint.keywords": {"added": ["XYZ"], "removed": []}}
+```
+
+Other keys that can appear: `accepted_derived`, `fingerprint.labels`, `region_rules`, `regex_rules`
+(`{old, new}`), `market`, `match_threshold`, `date_order` (`{old, new}`).
+
 ### 4.6 `PUT /api/v1/templates/{id}`
 
 Body `{"definition": TemplateDefinition, "note": "…"}` → version `current + 1` (no PDF needed).
@@ -257,11 +275,22 @@ target (market fields are detected, not mapped; `_seller_amount` etc. are workin
 `markets`: active market profiles. `xsd`: the XSD of the XML output (also
 [`schemas/parse_result.xsd`](schemas/parse_result.xsd)).
 
-### 4.10 `GET /api/v1/audit`, `GET /api/v1/audit/verify`
+### 4.10 `GET /api/v1/audit`, `/audit/verify`, `/audit/export`
 
 Search: `action`, `actor_id`, `entity_id`, `from`, `to` (ISO prefixes, UTC), `limit` (≤ 500),
 `offset` → `{items, total, limit, offset}`, newest first. Verify →
 `{ok, checked, first_bad_seq, reason, last_hash}`.
+Export: `format` = `csv` (UTF-8 with BOM) / `xlsx` / `json`, `from`, `to` → every record in the range,
+oldest first, all fields incl. hashes (the copy can be verified independently); audited as
+`AUDIT_EXPORTED` with `{format, from, to, count}`.
+
+### 4.11 `GET /metrics`
+
+Prometheus text format, behind the same client credentials (configure `basic_auth` in the scrape
+job). Metrics: `bonds_http_requests_total{method,route,status}`,
+`bonds_http_request_duration_seconds{route}` (histogram), `bonds_parses_total{status,market}`,
+`bonds_template_matches_total{template_id}`, `bonds_auth_failures_total{reason}`,
+`bonds_templates_active`. Labels use route templates — never file names or slip values.
 
 ---
 

@@ -133,6 +133,15 @@ class AuditLog:
         hits.reverse()
         return hits[offset : offset + limit], len(hits)
 
+    def records(self, *, date_from: str | None = None, date_to: str | None = None) -> list[dict[str, Any]]:
+        """All records in file order (oldest first), optionally limited to an ISO date / time range."""
+        return [
+            r
+            for r in self._iter()
+            if (date_from is None or r["occurred_at"][: len(date_from)] >= date_from)
+            and (date_to is None or r["occurred_at"][: len(date_to)] <= date_to)
+        ]
+
     def verify(self) -> dict[str, Any]:
         prev, checked, last = GENESIS_HASH, 0, None
         for line_no, rec in enumerate(self._iter(), start=1):

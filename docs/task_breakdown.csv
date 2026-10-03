@@ -133,7 +133,7 @@ T5.3,PH5,Task,README quick start,11§1–2,T5.2,0.5,,A new developer runs the de
 T5.4,PH5,Task,Demo and release,"12§2, 13§5 It5",T5.3,1.25,,Demo runs clean; `v0.1.0` tagged,v0.1.0,done,100%
 5.4.1,T5.4,Sub-task,"tools/demo.py: parse 4 mocks, onboard unknown layout, export, verify audit",12 M4.4,,0.75,,,v0.1.0,done,
 5.4.2,T5.4,Sub-task,"CHANGELOG, tag v0.1.0, iteration review",13§7,,0.5,,,v0.1.0,done,
-PH6,,Phase,Storage & remaining endpoints,,,32,,Production database and every Later endpoint.,v0.2.0,partial,67%
+PH6,,Phase,Storage & remaining endpoints,,,32,,Production database and every Later endpoint.,v0.2.0,done,100%
 T6.1,PH6,Task,PostgreSQL + migrations,"B§D4, 03§7, 12 P1.1–P1.3",PH5,10,,Suite green on SQLite and PostgreSQL,v0.2.0,dropped,100%
 6.1.1,T6.1,Sub-task,Alembic baseline migration,12 P1.1,,4,,no database (ADR-0009),v0.2.0,dropped,
 6.1.2,T6.1,Sub-task,Postgres audit triggers + restricted role (INSERT/SELECT only),"06§5.1, 12 P1.2",,4,,no database (ADR-0009),v0.2.0,dropped,
@@ -142,28 +142,28 @@ T6.2,PH6,Task,Slip endpoints (Later),"04§4.4, 4.10, 4.13, FR-03, FR-18",T6.1,6,
 6.2.1,T6.2,Sub-task,POST /slips/batch,04§4.4,,2,,no stored slips (ADR-0009),v0.2.0,dropped,
 6.2.2,T6.2,Sub-task,POST /slips/{id}/reparse?force= (409 without force on APPROVED),04§4.10,,2,,no stored slips (ADR-0009),v0.2.0,dropped,
 6.2.3,T6.2,Sub-task,DELETE /slips/{id} (audit row kept),"04§4.13, 06§5.7",,2,,no stored slips (ADR-0009),v0.2.0,dropped,
-T6.3,PH6,Task,Template endpoints (Later),"04§4.16–4.19, FR-19, FR-27",T6.1,8,,FR-19 and FR-27 acceptance met,v0.2.0,partial,75%
+T6.3,PH6,Task,Template endpoints (Later),"04§4.16–4.19, FR-19, FR-27",T6.1,8,,FR-19 and FR-27 acceptance met,v0.2.0,done,100%
 6.3.1,T6.3,Sub-task,"PUT (new version), PATCH (enable/disable/rename, TEMPLATE_UPDATED)",04§4.16–4.17,,4,,,v0.2.0,done,
-6.3.2,T6.3,Sub-task,"POST /templates/import, GET /templates/{id}/history with version diffs",04§4.18–4.19,,4,,import done; versions visible in GET /templates/{id}; diff endpoint open,v0.2.0,partial,
-T6.4,PH6,Task,Combined exports,"04§4.22, 4.25, FR-16",T6.1,8,,XML validates against XSD,v0.2.0,partial,50%
+6.3.2,T6.3,Sub-task,"POST /templates/import, GET /templates/{id}/history with version diffs",04§4.18–4.19,,4,,import + GET /templates/{id}/history with per-version diffs,v0.2.0,done,
+T6.4,PH6,Task,Combined exports,"04§4.22, 4.25, FR-16",T6.1,8,,XML validates against XSD,v0.2.0,done,100%
 6.4.1,T6.4,Sub-task,GET /exports/deals (DEALS_EXPORTED),04§4.22,,4,,no stored deals to export (ADR-0009),v0.2.0,dropped,
-6.4.2,T6.4,Sub-task,GET /audit/export csv/xlsx/json (AUDIT_EXPORTED),04§4.25,,2,,audit export endpoint,v0.2.0,todo,
+6.4.2,T6.4,Sub-task,GET /audit/export csv/xlsx/json (AUDIT_EXPORTED),04§4.25,,2,,GET /api/v1/audit/export csv / xlsx / json,v0.2.0,done,
 6.4.3,T6.4,Sub-task,XSD for the XML output,05§6,,2,,,v0.2.0,done,
-PH7,,Phase,Operations,,,32,,"Deployable, observable and recoverable. Can run in parallel with PH8.",v0.3.0,partial,34%
+PH7,,Phase,Operations,,,32,,"Deployable, observable and recoverable. Can run in parallel with PH8.",v0.3.0,partial,44%
 T7.1,PH7,Task,Containers,"11§4, 12 P4.1",T6.1,4,,`docker compose up` serves `/health` 200,v0.3.0,done,100%
 7.1.1,T7.1,Sub-task,"Dockerfile (non-root, slim) + docker-compose (API + Postgres)",11§4,,4,,,v0.3.0,done,
 T7.2,PH7,Task,CI/CD,"13§7, 12 P4.2",T7.1,8,,Merge to main deploys to Dev; tags deploy UAT/Prod with approval,v0.3.0,partial,25%
 7.2.1,T7.2,Sub-task,Postgres test matrix; image build; deploy to Dev + smoke test,13§7,,4,,CI builds and runs the image; registry push and deploy open,v0.3.0,partial,
 7.2.2,T7.2,Sub-task,Tag pipeline: UAT / Prod with manual approval,13§7,,4,,needs hosting decision,v0.3.0,todo,
-T7.3,PH7,Task,Observability,"11§5.2, 11§7, NFR-15",T7.1,8,,"Dashboards: p95 latency, status counts, template hit rate",v0.3.0,partial,12%
+T7.3,PH7,Task,Observability,"11§5.2, 11§7, NFR-15",T7.1,8,,"Dashboards: p95 latency, status counts, template hit rate",v0.3.0,partial,50%
 7.3.1,T7.3,Sub-task,structlog JSON logs with request id,03§9.4,,2,,access log with request id; JSON logging open,v0.3.0,partial,
-7.3.2,T7.3,Sub-task,Prometheus metrics + Sentry,11§7,,6,,,v0.3.0,todo,
+7.3.2,T7.3,Sub-task,Prometheus metrics + Sentry,11§7,,6,,Prometheus /metrics done; Sentry / error tracking open,v0.3.0,partial,
 T7.4,PH7,Task,"Backups, retention","11§5.3–5.6, 06§5.8, NFR-12",T7.1,8,,Restore drill passes; audit verifies after restore,v0.3.0,partial,25%
 7.4.1,T7.4,Sub-task,"DB + uploads backup, restore drill",11§5.3,,4,,backup templates/ and data/audit/ (no slip data to back up),v0.3.0,todo,
 7.4.2,T7.4,Sub-task,"Audit archive job (AUDIT_ARCHIVED), scheduled audit/verify","06§5.8, 11§5.5",,4,,verify-audit CLI and /audit/verify done; archive job open,v0.3.0,partial,
 T7.5,PH7,Task,Transport security,"07§3, 07§6, NFR-06",T7.1,4,,TLS-only access verified,v0.3.0,partial,50%
 7.5.1,T7.5,Sub-task,"Reverse proxy TLS, HSTS, security headers, CORS to frontend, docs disabled in prod","07§3, 07§6",,4,,CORS and docs toggle done; TLS reverse proxy open,v0.3.0,partial,
-PH8,,Phase,Hardening,,,52,,"Scans, locked PDFs, multi-deal PDFs, brute force and performance handled.",v0.4.0,partial,8%
+PH8,,Phase,Hardening,,,52,,"Scans, locked PDFs, multi-deal PDFs, brute force and performance handled.",v0.4.0,partial,15%
 T8.1,PH8,Task,Brute-force limiter,"07§2.6, FR-23",PH5,4,,FR-23 acceptance met,v0.4.0,done,100%
 8.1.1,T8.1,Sub-task,"Per-IP failure window, 429 + Retry-After, AUTH_BLOCKED",07§2.6,,4,,pulled forward into PH4,v0.4.0,done,
 T8.2,PH8,Task,OCR for scanned slips,"FR-14, R-03",PH5,16,,Scanned mock → `NEEDS_REVIEW` with correct values,v0.4.0,todo,0%
@@ -176,9 +176,9 @@ T8.4,PH8,Task,Multi-deal PDFs,"FR-31, R-02, 05§5.10",T6.1,12,,FR-31 acceptance 
 8.4.2,T8.4,Sub-task,API returns a list of deals per file; tests,05§5.10,,4,,,v0.4.0,todo,
 T8.5,PH8,Task,Holiday calendar & date ambiguity,"09§5, R-05",PH5,4,,Holiday settlement flagged; ambiguous dates lower confidence,v0.4.0,todo,0%
 8.5.1,T8.5,Sub-task,Indian holiday calendar loader + validation warning,09§5,,4,,,v0.4.0,todo,
-T8.6,PH8,Task,Robustness & performance,"NFR-01, NFR-02, NFR-09, 10§9",PH5,8,,p95 ≤ 3 s; malformed PDFs rejected safely,v0.4.0,todo,0%
+T8.6,PH8,Task,Robustness & performance,"NFR-01, NFR-02, NFR-09, 10§9",PH5,8,,p95 ≤ 3 s; malformed PDFs rejected safely,v0.4.0,partial,50%
 8.6.1,T8.6,Sub-task,Fuzz malformed / huge PDFs; parser time and memory limits,NFR-09,,4,,,v0.4.0,todo,
-8.6.2,T8.6,Sub-task,Performance test,10§9,,4,,,v0.4.0,todo,
+8.6.2,T8.6,Sub-task,Performance test,10§9,,4,,tests/perf + tools/benchmark.py: p95 0.44 s on the mock slips (target 3 s),v0.4.0,done,
 PH9,,Phase,"Real formats, UAT & go-live",,,232,,"Your real slip formats parse automatically; ops, security and audit sign off.",v1.0.0,todo,0%
 T9.1,PH9,Task,Real slip collection,"samples/real/README, 12 P5.1",-,24,,≥ 5 masked slips per top source,v1.0.0,todo,0%
 9.1.1,T9.1,Sub-task,Collect and mask real slips per source,12 P5.1,,24,,,v1.0.0,todo,
