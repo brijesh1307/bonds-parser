@@ -1,10 +1,7 @@
 # 05 · Data Dictionary and Outputs
 
-> **Update 2026-10-02 — stateless design ([ADR-0009](adr/0009-stateless-api-no-slip-storage.md)).**
-> Deal slips are never stored and there is no database. Wherever this document describes a `slips`
-> table, `/api/v1/slips/*` endpoints, SQLite / PostgreSQL, uploads storage or slip statuses such as
-> `APPROVED`, [`00_design_baseline.md`](00_design_baseline.md) is authoritative: templates, clients and
-> the audit log are files, and preview / approve take the PDF + mapping in one request.
+> Current for `v0.1.0` (stateless, [ADR-0009](adr/0009-stateless-api-no-slip-storage.md)): the
+> parse result is returned by the API and never stored.
 
 The canonical deal every slip is mapped to, the response envelope the API returns, and the exact
 JSON, XML and Excel output formats.
@@ -151,14 +148,14 @@ The full vote is returned in the envelope's `market.signals` (§5.3).
 
 ## 5. `ParseResult` response envelope
 
-Returned by `POST /api/v1/parse?format=json`, `POST /api/v1/slips/{id}/preview` and, extended to
-`SlipOut`, by `POST /api/v1/slips`, `GET /api/v1/slips/{id}`, `approve` and `reparse`.
+Returned by `POST /api/v1/parse?format=json` and `POST /api/v1/templates/preview`, and as `result`
+inside the `POST /api/v1/templates` response. It is never stored.
 
 ### 5.1 Top-level keys
 
 | Key | Type | Description |
 |---|---|---|
-| `status` | enum | `PARSED`, `NEEDS_REVIEW`, `NEW_TEMPLATE`, `APPROVED`, `UNREADABLE`, `FAILED` (baseline §3) |
+| `status` | enum | `PARSED`, `NEEDS_REVIEW`, `NEW_TEMPLATE`, `UNREADABLE`, `FAILED` (baseline §3) |
 | `source` | object | `file` (original file name), `pages` (int), `page_sizes` (list of `[width, height]` in points per page), `sha256` (hex of the PDF bytes) |
 | `market` | object | `MarketInfo`, §5.3 |
 | `template` | object | `TemplateMatch`, §5.4 |
@@ -170,8 +167,8 @@ Returned by `POST /api/v1/parse?format=json`, `POST /api/v1/slips/{id}/preview` 
 | `low_confidence` | list[str] | Required field paths whose confidence < `BONDS_CONFIDENCE_THRESHOLD` (0.90) |
 | `unmapped` | list | `KeyValue`s that mapped to no field and are not on the template's `ignore` list (same shape as `key_values`) **[A]: list, not the `_unmapped` object of the reference doc** |
 
-`SlipOut` adds: `id` (UUID), `duplicate` (bool), `duplicate_of` (UUID or null), `created_by`,
-`created_at`, `updated_at`, `approved_by`, `approved_actor_name`, `approved_at`.
+`fields.<path>.value` keeps the field's JSON type: decimals as strings, integers as numbers,
+booleans (`is_market_linked`) as `true` / `false`, dates as ISO strings.
 
 ### 5.2 Bounding boxes
 
@@ -418,19 +415,10 @@ An illustrative validation issue (not produced by the mock slips, which are inte
  "expected": "52264305.56", "actual": "52264350.56", "tolerance": "0.01"}
 ```
 
-### 5.10 Multi-deal JSON (`GET /api/v1/exports/deals?format=json`) **[A]**
+### 5.10 Several slips
 
-```json
-{
-  "generated_at": "2026-09-27T10:15:00.000000Z",
-  "count": 1,
-  "filters": {"status": "APPROVED", "from": "2026-09-01", "to": "2026-09-30"},
-  "items": [
-    {"slip_id": "0f8c2d6e-…", "status": "APPROVED", "file": "01_gsec_outright_purchase.pdf",
-     "template_id": "orca_fi_desk_gsec_deal_slip", "template_version": 1, "deal": {"deal_id": "GS/NDSOM/2026/004571", "…": "…"}}
-  ]
-}
-```
+There is no combined export of past deals: nothing is stored (ADR-0009). A caller that needs a
+batch file parses each PDF and combines the results itself.
 
 ### 5.11 JSON serialisation rules
 
@@ -725,72 +713,37 @@ pair; the JSON in §5.8 lists them all).
 
 ## 7. Excel output
 
-Produced by `app/export/excel_export.py` with openpyxl. Values only, no formulas.
+Produced by `app/export/excel_export.py` (openpyxl) for `/api/v1/parse?format=xlsx`. One workbook
+per slip; values only, no formulas.
 
 ### 7.1 Workbook layout
 
-| Sheet | Present | One row per | Columns (in order) |
-|---|---|---|---|
-| `Deals` | always | slip | see §7.2 |
-| `Fields` | single-slip export only | field with a value | `field`, `value`, `raw`, `method`, `confidence`, `label`, `page`, `bbox` |
-| `Key Values` | always | extracted pair | `slip_id`, `page`, `source`, `key`, `value`, `mapped_to`, `key_bbox`, `value_bbox` |
-| `Validation` | always | issue | `slip_id`, `code`, `severity`, `fields`, `message`, `expected`, `actual`, `tolerance` |
+| Sheet | One row per | Columns |
+|---|---|---|
+| `Deal` | canonical field | `field`, `value` — starts with `status` and `file`, then every deal field in §1 order, `identifiers.*` after the deal fields, `repo.*` flattened |
+| `Fields` | field with a value | `field`, `value`, `confidence`, `method`, `label on slip`, `raw text`, `page` |
+| `Key Values` | extracted pair | `key`, `value`, `mapped_to`, `source`, `page` |
+| `Validation` | issue | `code`, `severity`, `message`, `fields`, `expected`, `actual`; each `missing_required` entry is added as `MISSING_REQUIRED` (ERROR), so the sheet is a complete review list |
 
-Sheet order: single slip `Deals, Fields, Key Values, Validation`; multi-deal
-`Deals, Key Values, Validation`. A sheet without data still has its header row. In `Validation`,
-each `missing_required` entry is written as a row with code `REQUIRED_MISSING` (ERROR) and each
-`low_confidence` entry as `LOW_CONFIDENCE` (WARNING), so the sheet is a complete review list **[A]**.
-`fields` is joined with `, `; bboxes are written as text `56.7, 123.2, 240.9, 141.2`.
+A sheet without data still has its header row.
 
-### 7.2 `Deals` columns
+### 7.2 Cell types
 
-| # | Column | Excel type | Number format |
-|---|---|---|---|
-| 1 | `slip_id` | text | `@` (empty for `/parse`) |
-| 2 | `status` | text | |
-| 3 | `file_name` | text | |
-| 4 | `template_id` | text | |
-| 5 | `template_version` | number | `0` |
-| 6 | `match_score` | number | `0.0000` |
-| 7–46 | `deal_id` … `bid_amount` in §1 order, with `identifiers` flattened after `isin` as `identifiers.cusip`, `identifiers.sedol`, `identifiers.common_code` | per §7.3 | per §7.3 |
-| 47–50 | `issuer_country`, `market`, `slip_locale`, `market_confidence` | text / number | `0.00` for confidence |
-| 51–65 | `repo.repo_rate`, `repo.repo_days`, `repo.day_count`, `repo.haircut`, `repo.leg1_date`, `repo.leg1_price`, `repo.leg1_accrued_days`, `repo.leg1_accrued_interest`, `repo.leg1_amount`, `repo.leg2_date`, `repo.leg2_price`, `repo.leg2_accrued_days`, `repo.leg2_accrued_interest`, `repo.leg2_amount`, `repo.repo_interest` | per §7.3 | per §7.3 |
+| Kind | Cell value | Number format |
+|---|---|---|
+| decimal fields (nominal, cash, price, yield, rate, fx) | number (`Decimal`) | general |
+| date fields | real Excel date | `dd-mmm-yyyy` |
+| int, bool | number / boolean | general |
+| everything else | text | general |
 
-`repo.*` cells are empty when `repo` is `null`. Column numbers 7–46 are indicative; the order is
-the §1 order and is the contract.
-
-### 7.3 Cell types by field kind
-
-| Kind | Fields | Cell value | Number format |
-|---|---|---|---|
-| date | all `*_date` fields | real Excel date (`datetime.date`) | `dd-mmm-yyyy` (`24-Sep-2026`) |
-| timestamp | (audit export) | naive UTC `datetime` | `yyyy-mm-dd hh:mm:ss` |
-| nominal | `face_value`, `face_value_per_unit`, `bid_amount` | number (`Decimal`) | `#,##0` (`#,##0.##` if fractional) |
-| cash | `principal_amount`, `accrued_interest`, `discount_amount`, `consideration`, `repo.leg*_accrued_interest`, `repo.leg*_amount`, `repo.repo_interest` | number | `#,##0.00` |
-| price | `price`, `repo.leg*_price` | number | `0.0000` |
-| yield | `yield` | number | `0.0000` |
-| rate | `coupon_rate`, `repo.repo_rate`, `repo.haircut` | number | `0.00` |
-| fx | `fx_rate` | number | `0.000000` |
-| int | `coupon_frequency`, `tenor_days`, `quantity`, `accrued_days`, `repo.repo_days`, `repo.leg*_accrued_days` | number | `0` |
-| score | `confidence`, `market_confidence` | number | `0.00` |
-| text | everything else incl. `deal_id`, `isin` | text | `@` |
-
-Western grouping is used in Excel formats; Indian lakh grouping is a display option after MVP **[A]**.
-
-### 7.4 Styling and safety
+### 7.3 Styling and safety
 
 | Item | Rule |
 |---|---|
-| Header row | Bold, white font, fill `#1F3B63`, centred, wrap text, row height 30 |
-| Freeze / filter | Freeze panes at `A2`; auto-filter over the header range |
-| Column width | `min(max(len(header), longest value) + 2, 50)` characters |
-| Low confidence | In `Fields`, `confidence` cells below the threshold get fill `#FFE699` |
-| Status | In `Deals`, `status` cells: `PARSED`/`APPROVED` green `#C6EFCE`, `NEEDS_REVIEW`/`NEW_TEMPLATE` amber `#FFE699`, `UNREADABLE`/`FAILED` red `#FFC7CE` **[A]** |
-| Formula injection | Text starting with `=`, `+`, `-`, `@` is written with `data_type="s"` (never interpreted as a formula); same rule for the CSV audit export (prefixed with `'`) |
-| Precision | Excel stores IEEE doubles (15 significant digits). All INR amounts in scope (< 10¹³ with 2 dp) are exact; JSON / XML remain the system of record |
-| Properties | Workbook title = deal id or `deals`, creator `bonds-parser` |
-
----
+| Header row | Bold, white font on `#1F3B63` |
+| Freeze | Panes frozen at `A2` |
+| Column width | Fitted to content, 10–70 characters |
+| Formula injection | Text starting with `=`, `+`, `-` or `@` is prefixed with `'` |
 
 ## 8. Number, date and precision policy
 

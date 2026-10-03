@@ -1,5 +1,7 @@
 # 09 · Market Profiles (multi-country design)
 
+> Current for `v0.1.0`. Only the `IN` profile is active; §4.2-4.4 are planned profiles.
+
 How the parser handles slips from more than one country. Baseline decision **D12**: the market is
 detected **before** normalisation by a vote of signals. The MVP fully parses India (`IN`). Other
 markets are detected and sent to review. Names and values follow `docs/00_design_baseline.md`.
@@ -38,10 +40,9 @@ values (day count, settlement cycle) and validation (holidays).
 | `currency` / `settlement_currency` | ISO 4217 codes | `USD` |
 | `slip_locale` | How the document is written (date order, number format, language), e.g. `en-IN`, `en-US`, `en-GB` | `en-GB` |
 
-These can all differ, so they are stored separately (`slips.market`, `slips.issuer_country`,
-deal fields `issuer_country`, `market`, `slip_locale`, `market_confidence`). Only `market` picks
-the profile. `slip_locale` drives date and number parsing when it disagrees with the market's
-default (**assumption**).
+These can all differ, so they are separate deal fields (`issuer_country`, `market`, `slip_locale`,
+`market_confidence`, `currency`). Only `market` picks the profile; in `v0.1.0` `slip_locale` is
+the profile's locale.
 
 `market` enum: `IN, US, GB, DE, JP, INTL, UNKNOWN`.
 
@@ -80,12 +81,10 @@ market_confidence  = score[winner] / Σ score            (0 when no signal found
 
 | Rule | Outcome |
 |---|---|
-| No signals at all | `market = UNKNOWN`, confidence 0 → `NEEDS_REVIEW` ("market uncertain") |
-| `market_confidence` < **0.70** (**assumption**) | Winner is kept but flagged → `NEEDS_REVIEW` ("market uncertain") |
-| Top two markets within **1.0** point of each other (**assumption**) | Conflict: winner kept, both listed in `market.signals` → `NEEDS_REVIEW` |
-| A matched template's market is contradicted by **≥ 2 independent** signals of weight ≥ 2.0 for one other market | Template may be wrong for this slip → `NEEDS_REVIEW` ("market conflicts with template") |
+| No signals at all | `market = UNKNOWN`, confidence 0 → warning `MARKET_UNCERTAIN` → `NEEDS_REVIEW` |
+| `market_confidence` < **0.70** (baseline §4) | `market = UNKNOWN` → `MARKET_UNCERTAIN` → `NEEDS_REVIEW`; a matched template's market is used instead (template pin) |
 | ISIN prefix (issuer country) differs from the settlement-system market | Normal: settlement system wins for `market`, ISIN sets `issuer_country`. Not a conflict |
-| Winner has no available profile | `NEEDS_REVIEW` ("market profile not available") |
+| Winner has no active profile | warning `MARKET_PROFILE_UNAVAILABLE` → `NEEDS_REVIEW` |
 
 All signals, with the text that fired them, are returned in the slip result so the reviewer can
 see why a market was chosen.

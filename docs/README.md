@@ -17,11 +17,14 @@ then parse automatically. Every action is audited. Access uses client credential
 
 ## Documents
 
+Current for `v0.1.0`: 00, 02–11 and 14 describe the system as built (stateless, no slip storage,
+[ADR-0009](adr/0009-stateless-api-no-slip-storage.md)). 01, 12 and 13 are the original planning record.
+
 | # | Document | What it answers | Type |
 |---|---|---|---|
 | 00 | [Design baseline](00_design_baseline.md) | The agreed names, statuses, endpoints, tables, env vars. **Single source of truth.** | Reference |
 | — | [Deal slip standard formats](deal_slip_standard_formats.md) | What bond deal slips in the market look like, the canonical fields, label synonyms, validation rules | Domain reference |
-| 01 | [Requirements](01_requirements.md) | What the system must do (functional + non-functional), scope, risks, glossary | SRS |
+| 01 | [Requirements](01_requirements.md) | What the system must do (functional + non-functional), scope, risks, glossary *(original planning record; written before the stateless decision — see the notice at its top)* | SRS |
 | 02 | [High-Level Design](02_hld.md) | Architecture, components, data flows, deployment, **system design principles applied** | HLD |
 | 03 | [Low-Level Design](03_lld.md) | Every module, class, function signature, algorithm, DB schema, sequence diagrams, state machine | LLD |
 | 04 | [API specification](04_api_spec.md) | Every endpoint: purpose, parameters, examples, errors; Swagger usage; frontend integration | API |
@@ -32,9 +35,9 @@ then parse automatically. Every action is audited. Access uses client credential
 | 09 | [Market profiles](09_market_profiles.md) | How other countries' slips are detected and parsed (IN, US, GB, INTL) | Design |
 | 10 | [Testing strategy](10_testing_strategy.md) | Test levels, golden files, API/audit/security tests, CI | Plan |
 | 11 | [Runbook](11_runbook.md) | Install, configure, run, use with curl/Swagger, deploy, back up, troubleshoot | How-to |
-| 12 | [Project plan](12_project_plan.md) | Tasks and sub-tasks, 2-hour MVP list, roadmap, milestones, go-live checklist | Plan |
-| 13 | [Development plan](13_development_plan.md) | How to build it: environments, setup, branching, build order (iterations), CI/CD, reviews | Plan |
-| 14 | [Task breakdown](14_task_breakdown.md) | **Master plan:** every phase, task and sub-task with doc references, estimates, dependencies and done-criteria (CSV: `task_breakdown.csv`) | Plan |
+| 12 | [Project plan](12_project_plan.md) | Tasks and sub-tasks, 2-hour MVP list, roadmap, milestones, go-live checklist *(original planning record; written before the stateless decision — see the notice at its top)* | Plan |
+| 13 | [Development plan](13_development_plan.md) | How to build it: environments, setup, branching, build order (iterations), CI/CD, reviews *(original planning record; written before the stateless decision — see the notice at its top)* | Plan |
+| 14 | [Task breakdown](14_task_breakdown.md) | **Master plan, live status:** every phase, task and sub-task with doc references, estimates, dependencies and done-criteria (CSV: `task_breakdown.csv`) | Plan |
 | ADR | [Architecture decisions](adr/README.md) — incl. [ADR-0009 stateless, no slip storage](adr/0009-stateless-api-no-slip-storage.md) | Why each key technology/design choice was made and what was rejected | Decisions |
 
 ## Project files and what they are for
